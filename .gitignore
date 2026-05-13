@@ -1,0 +1,35 @@
+# Gradle
+.gradle/
+build/
+
+# Logs
+logs/
+*.log
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# IDEs
+.idea/
+*.iml
+*.iws
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Java
+*.class
+out/
+hs_err_pid*
+replay_pid*
+
+# Test reports and coverage
+coverage/
+.jacoco/
+
+# Docker/local runtime
+docker/data/

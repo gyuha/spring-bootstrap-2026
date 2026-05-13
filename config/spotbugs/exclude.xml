@@ -5,30 +5,54 @@
     xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0
                         https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
 
-    <!-- Spring @Configuration 클래스 — 의도적 패턴 -->
-    <Match>
-        <Class name="~.*Config"/>
-        <Bug pattern="SPRING_FILE_DISCLOSURE"/>
-    </Match>
-
-    <!-- Record 클래스 생성자 — null 허용 설계 -->
+    <!-- ── Java Record 클래스 false positive 제거 ──────────────────────────────
+         Java records의 compact constructor에서 defensive copy 후에도
+         SpotBugs가 EI_EXPOSE_REP/EI_EXPOSE_REP2를 오탐하는 경우 제외.
+         Records are immutable by design; Spring Data/Jackson require read access. -->
     <Match>
         <Class name="~.*Response"/>
-        <Bug pattern="NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
     </Match>
-
-    <!-- Lombok 생성 코드 제외 -->
     <Match>
-        <Source name="~.*\\.java"/>
-        <Bug pattern="RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE"/>
+        <Class name="~.*Request"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+        <Method name="~.*"/>
+        <Class name="~com\.example\.bootstrap\.global\.response\..*"/>
     </Match>
 
-    <!-- MapStruct 생성 코드 제외 -->
+    <!-- ── CT_CONSTRUCTOR_THROW: Spring 빈 초기화 패턴 ────────────────────────
+         Spring 빈은 생성자에서 예외를 던져 의존성 유효성을 검증합니다.
+         이는 의도된 패턴이며 Spring IoC 컨테이너가 관리합니다. -->
+    <Match>
+        <Bug pattern="CT_CONSTRUCTOR_THROW"/>
+        <Class name="~com\.example\.bootstrap\..*"/>
+    </Match>
+
+    <!-- ── EI_EXPOSE_REP2: Spring 서비스 의존성 주입 패턴 ─────────────────────
+         Spring @Service/@Component의 생성자 주입에서 발생하는 false positive.
+         Spring이 관리하는 thread-safe 빈을 참조합니다. -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+        <Class name="~.*Service"/>
+    </Match>
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+        <Class name="~.*Provider"/>
+    </Match>
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+        <Class name="~.*Util"/>
+    </Match>
+
+    <!-- ── MapStruct 생성 코드 제외 ──────────────────────────────────────────── -->
     <Match>
         <Class name="~.*MapperImpl"/>
     </Match>
 
-    <!-- 테스트 코드 제외 -->
+    <!-- ── 테스트 코드 제외 ────────────────────────────────────────────────────── -->
     <Match>
         <Class name="~.*Test"/>
     </Match>
@@ -36,14 +60,15 @@
         <Class name="~.*IT"/>
     </Match>
 
-    <!-- Spring Security 내부 패턴 -->
-    <Match>
-        <Bug pattern="HARD_CODE_PASSWORD"/>
-    </Match>
-
-    <!-- R2DBC/Reactor 패턴 — 구독 여부 SpotBugs 오탐 -->
+    <!-- ── Reactor/R2DBC 패턴 오탐 제거 ─────────────────────────────────────── -->
     <Match>
         <Bug pattern="RV_RETURN_VALUE_IGNORED"/>
+    </Match>
+
+    <!-- ── NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE: Optional 처리 후 오탐 ───── -->
+    <Match>
+        <Class name="~com\.example\.bootstrap\.global\.exception\.GlobalExceptionHandler"/>
+        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
     </Match>
 
 </FindBugsFilter>

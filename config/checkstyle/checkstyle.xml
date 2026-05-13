@@ -131,7 +131,7 @@
         <module name="AbbreviationAsWordInName">
             <property name="ignoreFinal" value="false"/>
             <property name="allowedAbbreviationLength" value="0"/>
-            <property name="allowedAbbreviations" value="JWT,API,DTO,ID,IT,URL,URI,HTTP,OK,KR"/>
+            <property name="allowedAbbreviations" value="JWT,API,DTO,ID,IT,URL,URI,HTTP,OK,KR,OA"/>
         </module>
         <module name="OperatorWrap">
             <property name="option" value="NL"/>
@@ -180,6 +180,17 @@
     <module name="SuppressionSingleFilter">
         <property name="checks" value="MethodNameCheck"/>
         <property name="files" value=".*Test\.java$|.*IT\.java$"/>
+    </module>
+
+    <!--
+        Suppress AbbreviationAsWordInName for files containing 'OAuth' in the filename.
+        'OAuth2' is an industry-standard protocol name where 'OA' naturally appears
+        as two consecutive capital letters (O from OAuth, A from Auth). This is
+        an intentional and universally accepted naming convention.
+    -->
+    <module name="SuppressionSingleFilter">
+        <property name="checks" value="AbbreviationAsWordInName"/>
+        <property name="files" value=".*OAuth.*\.java$"/>
     </module>
 
     <module name="SuppressWarningsFilter"/>

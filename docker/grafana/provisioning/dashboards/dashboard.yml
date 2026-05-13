@@ -1,0 +1,16 @@
+# =============================================================================
+# Grafana 대시보드 프로비저닝 설정
+# =============================================================================
+
+apiVersion: 1
+
+providers:
+  - name: "Spring Bootstrap Dashboards"
+    orgId: 1
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards
+      foldersFromFilesStructure: false

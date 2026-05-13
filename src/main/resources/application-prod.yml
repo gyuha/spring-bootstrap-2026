@@ -1,0 +1,44 @@
+# ── Prod 프로파일 설정 ────────────────────────────────────────────────────
+# 운영 환경에서 사용됩니다. 모든 민감한 값은 환경변수로 주입됩니다.
+
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  # Flyway: 운영 환경 — FLYWAY_URL / FLYWAY_USER / FLYWAY_PASSWORD 환경변수로
+  # DDL 권한 전용 마이그레이션 계정을 런타임 계정(DB_USERNAME)과 분리하여 주입합니다.
+  flyway:
+    baseline-on-migrate: false
+    out-of-order: false
+    clean-disabled: true      # 운영 환경에서 flyway clean 절대 금지
+
+# ── Actuator — 최소 엔드포인트만 노출 ────────────────────────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true
+
+# ── Swagger/OpenAPI — prod에서 비활성화 ───────────────────────────────────
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+# ── CORS — 환경변수에서 로드 ─────────────────────────────────────────────
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS}
+
+# ── 로깅 — JSON stdout (logstash-logback-encoder) ─────────────────────────
+logging:
+  level:
+    root: INFO
+    com.example.bootstrap: INFO
+  config: classpath:logback-prod.xml
