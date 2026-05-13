@@ -145,9 +145,19 @@ tasks.named('jacocoTestReport') {
     dependsOn test
 
     reports {
-        xml.required  = true
-        html.required = true
-        csv.required  = false
+        xml {
+            required = true
+            // Explicit output path: build/reports/jacoco/test/jacocoTestReport.xml
+            outputLocation = layout.buildDirectory.file('reports/jacoco/test/jacocoTestReport.xml')
+        }
+        html {
+            required = true
+            // Explicit output path: build/reports/jacoco/test/html/index.html
+            outputLocation = layout.buildDirectory.dir('reports/jacoco/test/html')
+        }
+        csv {
+            required = false
+        }
     }
 
     // Exclude generated/infrastructure code from coverage measurement.
