@@ -1,0 +1,212 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version "${springBootVersion}"
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'jacoco'
+    id 'checkstyle'
+    id 'com.github.spotbugs' version '6.1.7'
+}
+
+group = "${projectGroup}"
+version = "${projectVersion}"
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(javaVersion as int)
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven { url 'https://repo.spring.io/milestone' }
+    maven { url 'https://repo.spring.io/snapshot' }
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.ai:spring-ai-bom:${springAiVersion}"
+    }
+}
+
+dependencies {
+    // ── WebFlux (Reactive Web) ──────────────────────────────────────────
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+    // ── Security ────────────────────────────────────────────────────────
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+
+    // ── Validation ──────────────────────────────────────────────────────
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    // ── Actuator ────────────────────────────────────────────────────────
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+    // ── Metrics (Prometheus) ─────────────────────────────────────────────
+    implementation 'io.micrometer:micrometer-registry-prometheus'
+
+    // ── R2DBC (Reactive DB) ──────────────────────────────────────────────
+    implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
+    implementation 'org.postgresql:r2dbc-postgresql'
+
+    // ── JDBC DataSource (Flyway migration + Batch JobRepository 공유) ───
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+
+    // ── Flyway (JDBC 기반 스키마 마이그레이션) ────────────────────────────
+    implementation 'org.flywaydb:flyway-core'
+    implementation 'org.flywaydb:flyway-database-postgresql'
+    runtimeOnly 'org.postgresql:postgresql'
+
+    // ── Spring Batch ─────────────────────────────────────────────────────
+    implementation 'org.springframework.boot:spring-boot-starter-batch'
+
+    // ── Redis (Reactive) ─────────────────────────────────────────────────
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis-reactive'
+
+    // ── Spring AI ────────────────────────────────────────────────────────
+    // NOTE: Spring AI 1.0.0 GA renamed the starter (was spring-ai-openai-spring-boot-starter)
+    implementation 'org.springframework.ai:spring-ai-starter-model-openai'
+
+    // ── JWT ──────────────────────────────────────────────────────────────
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+
+    // ── MapStruct ────────────────────────────────────────────────────────
+    implementation 'org.mapstruct:mapstruct:1.6.3'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+
+    // ── Lombok ──────────────────────────────────────────────────────────
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
+
+    // ── OpenAPI / Swagger ────────────────────────────────────────────────
+    implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.8.8'
+
+    // ── Logstash Encoder (prod JSON logging) ─────────────────────────────
+    implementation 'net.logstash.logback:logstash-logback-encoder:8.1'
+
+    // ── SpotBugs annotations ─────────────────────────────────────────────
+    compileOnly 'com.github.spotbugs:spotbugs-annotations:4.9.3'
+
+    // ── Test ─────────────────────────────────────────────────────────────
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'io.projectreactor:reactor-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'org.springframework.batch:spring-batch-test'
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:postgresql'
+    testImplementation 'com.redis:testcontainers-redis:2.2.4'
+    testImplementation 'org.testcontainers:r2dbc'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+// ── Test Configuration ────────────────────────────────────────────────────
+tasks.named('test') {
+    useJUnitPlatform()
+    finalizedBy jacocoTestReport             // always generate report after tests
+
+    // Docker Engine 29+ requires API version >= 1.40, but docker-java 3.4.x defaults to
+    // v1.24 which is now rejected with HTTP 400.  Forcing "api.version=1.44" (the internal
+    // property key read by DefaultDockerClientConfig) ensures Testcontainers can connect to
+    // Docker Desktop on macOS and to modern Docker Engine versions in CI environments.
+    jvmArgs '-Dapi.version=1.44'
+}
+
+// Fail the build (via `check`) when line coverage drops below 60 %.
+// Running `./gradlew check` (or the Jenkinsfile `Build` stage) will:
+//   test → jacocoTestReport → jacocoTestCoverageVerification
+tasks.named('check') {
+    dependsOn jacocoTestCoverageVerification
+}
+
+// ── JaCoCo Configuration ──────────────────────────────────────────────────
+jacoco {
+    toolVersion = '0.8.12'
+}
+
+/** Patterns excluded from coverage measurement (generated / thin-wiring code). */
+def jacocoExcludePatterns = [
+    '**/*MapperImpl.class',          // MapStruct-generated mapper implementations
+    '**/BootstrapApplication.class', // Spring Boot entry-point — no testable logic
+    '**/domain/model/**',            // R2DBC entity value-objects (no business logic)
+    '**/config/**',                  // Spring @Configuration wiring classes
+    '**/global/response/**',         // Envelope DTO record/classes
+    '**/global/exception/code/**',   // Error-code enum definitions
+]
+
+tasks.named('jacocoTestReport') {
+    dependsOn test
+
+    reports {
+        xml.required  = true
+        html.required = true
+        csv.required  = false
+    }
+
+    // Exclude generated/infrastructure code from coverage measurement.
+    // Use a FileTree filter on sourceSets output to avoid the deprecated
+    // afterEvaluate-inside-task pattern (incompatible with Gradle 9+).
+    classDirectories.setFrom(
+        sourceSets.main.output.asFileTree.matching {
+            exclude jacocoExcludePatterns
+        }
+    )
+}
+
+tasks.named('jacocoTestCoverageVerification') {
+    dependsOn jacocoTestReport
+
+    violationRules {
+        rule {
+            limit {
+                counter = 'LINE'
+                value   = 'COVEREDRATIO'
+                minimum = 0.60   // 60 % line coverage threshold — build fails below this
+            }
+        }
+    }
+
+    // Apply the same exclusions as the report task.
+    classDirectories.setFrom(
+        sourceSets.main.output.asFileTree.matching {
+            exclude jacocoExcludePatterns
+        }
+    )
+}
+
+// ── Checkstyle Configuration ───────────────────────────────────────────────
+checkstyle {
+    toolVersion = '10.23.0'
+    configFile   = file('config/checkstyle/checkstyle.xml')
+    maxWarnings  = 0
+    ignoreFailures = false
+}
+
+tasks.withType(Checkstyle) {
+    reports {
+        xml.required  = true
+        html.required = true
+    }
+}
+
+// ── SpotBugs Configuration ─────────────────────────────────────────────────
+spotbugs {
+    toolVersion = '4.9.3'
+    effort      = 'max'
+    reportLevel = 'medium'
+    ignoreFailures = false
+}
+
+tasks.withType(com.github.spotbugs.snom.SpotBugsTask) {
+    excludeFilter = file("config/spotbugs/exclude.xml")
+    reports.create('html') {
+        required = true
+    }
+}
