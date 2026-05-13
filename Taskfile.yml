@@ -1,0 +1,191 @@
+version: '3'
+
+vars:
+  JAVA_HOME_DIR: '{{default "/Users/gyuha/.sdkman/candidates/java/current" .JAVA_HOME}}'
+  GRADLE: JAVA_HOME="{{.JAVA_HOME_DIR}}" ./gradlew
+  COMPOSE: docker compose
+  PROFILE: local
+  POSTGRES_DB: '{{default "bootstrap" .POSTGRES_DB}}'
+  POSTGRES_USER: '{{default "bootstrap" .POSTGRES_USER}}'
+  POSTGRES_PASSWORD: '{{default "bootstrap" .POSTGRES_PASSWORD}}'
+  DB_PORT: '{{default "15432" .DB_PORT}}'
+  REDIS_PORT: '{{default "16379" .REDIS_PORT}}'
+  SERVER_PORT: '{{default "8080" .SERVER_PORT}}'
+  APP_IMAGE: spring-bootstrap:latest
+
+tasks:
+  build:
+    desc: Gradle 빌드를 실행합니다.
+    cmds:
+      - '{{.GRADLE}} build'
+
+  clean:
+    desc: 빌드 산출물을 정리합니다.
+    cmds:
+      - '{{.GRADLE}} clean'
+
+  run:
+    desc: PostgreSQL/Redis를 실행한 뒤 local 프로파일로 애플리케이션을 실행합니다.
+    cmds:
+      - task: docker:infra:up
+      - task: run:local
+
+  run:local:
+    desc: local 프로파일로 애플리케이션을 실행합니다.
+    env:
+      SPRING_PROFILES_ACTIVE: local
+      R2DBC_URL: 'r2dbc:postgresql://localhost:{{.DB_PORT}}/{{.POSTGRES_DB}}'
+      JDBC_URL: 'jdbc:postgresql://localhost:{{.DB_PORT}}/{{.POSTGRES_DB}}'
+      DB_USERNAME: '{{.POSTGRES_USER}}'
+      DB_PASSWORD: '{{.POSTGRES_PASSWORD}}'
+      REDIS_HOST: localhost
+      REDIS_PORT: '{{.REDIS_PORT}}'
+      SERVER_PORT: '{{.SERVER_PORT}}'
+      OPENAI_API_KEY: '{{default "placeholder-key" .OPENAI_API_KEY}}'
+    cmds:
+      - '{{.GRADLE}} bootRun'
+
+  run:prod:
+    desc: prod 프로파일로 애플리케이션을 실행합니다.
+    env:
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_PORT: '{{.SERVER_PORT}}'
+      OPENAI_API_KEY: '{{default "placeholder-key" .OPENAI_API_KEY}}'
+    cmds:
+      - '{{.GRADLE}} bootRun'
+
+  run:app:
+    desc: 현재 PROFILE 변수로 애플리케이션만 실행합니다.
+    env:
+      SPRING_PROFILES_ACTIVE: '{{.PROFILE}}'
+      OPENAI_API_KEY: '{{default "placeholder-key" .OPENAI_API_KEY}}'
+    cmds:
+      - '{{.GRADLE}} bootRun'
+
+  test:
+    desc: JUnit 테스트를 실행합니다.
+    cmds:
+      - '{{.GRADLE}} test'
+
+  coverage:
+    desc: 테스트와 JaCoCo 리포트를 생성합니다.
+    cmds:
+      - '{{.GRADLE}} test jacocoTestReport'
+
+  coverage:verify:
+    desc: JaCoCo 커버리지 기준을 검증합니다.
+    cmds:
+      - '{{.GRADLE}} jacocoTestCoverageVerification'
+
+  checkstyle:
+    desc: Checkstyle 검사를 실행합니다.
+    cmds:
+      - '{{.GRADLE}} checkstyleMain checkstyleTest'
+
+  spotbugs:
+    desc: SpotBugs 검사를 실행합니다.
+    cmds:
+      - '{{.GRADLE}} spotbugsMain spotbugsTest'
+
+  lint:
+    desc: 정적 분석을 실행합니다.
+    cmds:
+      - task: checkstyle
+      - task: spotbugs
+
+  check:
+    desc: 전체 검증(테스트/커버리지/정적분석)을 실행합니다.
+    cmds:
+      - '{{.GRADLE}} check'
+
+  ci:
+    desc: CI용 클린 빌드 검증을 실행합니다.
+    cmds:
+      - task: clean
+      - task: check
+
+  deps:
+    desc: Gradle 의존성 트리를 출력합니다.
+    cmds:
+      - '{{.GRADLE}} dependencies'
+
+  docker:build:
+    desc: Docker 이미지를 빌드합니다.
+    preconditions:
+      - sh: test -f Dockerfile
+        msg: Dockerfile이 없습니다.
+    cmds:
+      - docker build -t {{.APP_IMAGE}} .
+
+  docker:infra:up:
+    desc: PostgreSQL/Redis를 백그라운드로 실행합니다.
+    env:
+      POSTGRES_DB: '{{.POSTGRES_DB}}'
+      POSTGRES_USER: '{{.POSTGRES_USER}}'
+      POSTGRES_PASSWORD: '{{.POSTGRES_PASSWORD}}'
+      DB_HOST_PORT: '{{.DB_PORT}}'
+      REDIS_HOST_PORT: '{{.REDIS_PORT}}'
+    cmds:
+      - '{{.COMPOSE}} up -d --wait --wait-timeout 60 postgres redis'
+
+  docker:infra:down:
+    desc: 로컬 인프라 컨테이너를 중지합니다.
+    cmds:
+      - '{{.COMPOSE}} stop postgres redis'
+
+  docker:up:
+    desc: Docker Compose 전체 스택을 실행합니다.
+    preconditions:
+      - sh: test -f Dockerfile
+        msg: Dockerfile이 없습니다.
+    cmds:
+      - '{{.COMPOSE}} up -d --build'
+
+  docker:down:
+    desc: Docker Compose 전체 스택을 중지/제거합니다.
+    cmds:
+      - '{{.COMPOSE}} down'
+
+  docker:logs:
+    desc: Docker Compose 로그를 follow 모드로 출력합니다.
+    cmds:
+      - '{{.COMPOSE}} logs -f --tail=200'
+
+  docker:ps:
+    desc: Docker Compose 서비스 상태를 출력합니다.
+    cmds:
+      - '{{.COMPOSE}} ps'
+
+  docker:restart:
+    desc: Docker Compose 전체 스택을 재시작합니다.
+    cmds:
+      - task: docker:down
+      - task: docker:up
+
+  db:shell:
+    desc: PostgreSQL psql 셸에 접속합니다.
+    cmds:
+      - '{{.COMPOSE}} exec postgres psql -U {{.POSTGRES_USER}} -d {{.POSTGRES_DB}}'
+
+  redis:shell:
+    desc: Redis CLI에 접속합니다.
+    cmds:
+      - '{{.COMPOSE}} exec redis redis-cli'
+
+  health:check:
+    desc: Actuator health 엔드포인트를 확인합니다.
+    cmds:
+      - curl -fsS http://localhost:{{.SERVER_PORT}}/actuator/health
+
+  reports:open:
+    desc: 테스트/커버리지/정적분석 HTML 리포트를 엽니다.
+    cmds:
+      - open build/reports/tests/test/index.html || true
+      - open build/reports/jacoco/test/html/index.html || true
+      - open build/reports/checkstyle/main.html || true
+      - open build/reports/spotbugs/main.html || true
+
+  help:
+    desc: 사용 가능한 Task 목록을 표시합니다.
+    cmds:
+      - task --list
