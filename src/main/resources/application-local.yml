@@ -6,6 +6,7 @@ spring:
     activate:
       on-profile: local
 
+
 # ── Actuator — 모든 엔드포인트 노출 ──────────────────────────────────────
 management:
   endpoints:
