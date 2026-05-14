@@ -11,8 +11,15 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * AuthController 통합 테스트.
+ *
+ * <p>TestContainers PostgreSQL + Redis를 사용하여 전체 스택을 구동합니다.
+ * 회원가입, 로그인, 토큰 갱신, 로그아웃 흐름을 End-to-End로 검증합니다.
+ */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
 @ActiveProfiles("local")
@@ -31,9 +38,9 @@ class AuthControllerIT {
     @Test
     @DisplayName("POST /auth/register — 신규 이메일로 회원가입 시 201과 AccountResponse를 반환한다")
     void register_withNewEmail_returns201AndAccountResponse() {
-        long ts = System.currentTimeMillis();
+        String uid = UUID.randomUUID().toString().replace("-", "").substring(0, 8);
         String body = String.format(
-                "{\"email\":\"reg_%d@example.com\",\"password\":\"pass1234\",\"nickname\":\"NewUser\"}", ts);
+                "{\"email\":\"reg_%s@example.com\",\"password\":\"pass1234\",\"nickname\":\"NewUser\"}", uid);
 
         webTestClient.post().uri(REGISTER_URL)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -42,7 +49,7 @@ class AuthControllerIT {
                 .expectStatus().isCreated()
                 .expectBody()
                 .jsonPath("$.code").isEqualTo("SUCCESS")
-                .jsonPath("$.data.email").isEqualTo("reg_" + ts + "@example.com")
+                .jsonPath("$.data.email").isEqualTo("reg_" + uid + "@example.com")
                 .jsonPath("$.data.nickname").isEqualTo("NewUser")
                 .jsonPath("$.data.role").isEqualTo("USER");
     }
@@ -50,9 +57,9 @@ class AuthControllerIT {
     @Test
     @DisplayName("POST /auth/register — 중복 이메일이면 409 Conflict를 반환한다")
     void register_withDuplicateEmail_returns409() {
-        long ts = System.currentTimeMillis();
+        String uid = UUID.randomUUID().toString().replace("-", "").substring(0, 8);
         String body = String.format(
-                "{\"email\":\"dup_%d@example.com\",\"password\":\"pass1234\",\"nickname\":\"User1\"}", ts);
+                "{\"email\":\"dup_%s@example.com\",\"password\":\"pass1234\",\"nickname\":\"User1\"}", uid);
 
         webTestClient.post().uri(REGISTER_URL)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -70,9 +77,9 @@ class AuthControllerIT {
     @Test
     @DisplayName("POST /auth/login — 올바른 자격증명으로 로그인 시 200과 TokenResponse를 반환한다")
     void login_withValidCredentials_returns200AndTokenResponse() {
-        long ts = System.currentTimeMillis();
+        String uid = UUID.randomUUID().toString().replace("-", "").substring(0, 8);
         String registerBody = String.format(
-                "{\"email\":\"login_%d@example.com\",\"password\":\"pass1234\",\"nickname\":\"LoginUser\"}", ts);
+                "{\"email\":\"login_%s@example.com\",\"password\":\"pass1234\",\"nickname\":\"LoginUser\"}", uid);
         webTestClient.post().uri(REGISTER_URL)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(registerBody)
@@ -80,7 +87,7 @@ class AuthControllerIT {
                 .expectStatus().isCreated();
 
         String loginBody = String.format(
-                "{\"email\":\"login_%d@example.com\",\"password\":\"pass1234\"}", ts);
+                "{\"email\":\"login_%s@example.com\",\"password\":\"pass1234\"}", uid);
         webTestClient.post().uri(LOGIN_URL)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(loginBody)
@@ -95,9 +102,9 @@ class AuthControllerIT {
     @Test
     @DisplayName("POST /auth/login — 틀린 비밀번호이면 401을 반환한다")
     void login_withWrongPassword_returns401() {
-        long ts = System.currentTimeMillis();
+        String uid = UUID.randomUUID().toString().replace("-", "").substring(0, 8);
         String registerBody = String.format(
-                "{\"email\":\"wrong_%d@example.com\",\"password\":\"correct\",\"nickname\":\"WrongUser\"}", ts);
+                "{\"email\":\"wrong_%s@example.com\",\"password\":\"correct\",\"nickname\":\"WrongUser\"}", uid);
         webTestClient.post().uri(REGISTER_URL)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(registerBody)
@@ -105,7 +112,7 @@ class AuthControllerIT {
                 .expectStatus().isCreated();
 
         String loginBody = String.format(
-                "{\"email\":\"wrong_%d@example.com\",\"password\":\"incorrect\"}", ts);
+                "{\"email\":\"wrong_%s@example.com\",\"password\":\"incorrect\"}", uid);
         webTestClient.post().uri(LOGIN_URL)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(loginBody)
@@ -116,8 +123,8 @@ class AuthControllerIT {
     @Test
     @DisplayName("POST /auth/refresh — 유효한 Refresh Token으로 새 토큰을 발급받는다")
     void refresh_withValidRefreshToken_returnsNewTokenResponse() {
-        long ts = System.currentTimeMillis();
-        String email = "refresh_" + ts + "@example.com";
+        String uid = UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+        String email = "refresh_" + uid + "@example.com";
 
         String registerBody = String.format(
                 "{\"email\":\"%s\",\"password\":\"pass1234\",\"nickname\":\"RefreshUser\"}", email);
@@ -151,8 +158,8 @@ class AuthControllerIT {
     @Test
     @DisplayName("POST /auth/logout — 유효한 Access Token으로 로그아웃 시 200을 반환한다")
     void logout_withValidToken_returns200() {
-        long ts = System.currentTimeMillis();
-        String email = "logout_" + ts + "@example.com";
+        String uid = UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+        String email = "logout_" + uid + "@example.com";
 
         String registerBody = String.format(
                 "{\"email\":\"%s\",\"password\":\"pass1234\",\"nickname\":\"LogoutUser\"}", email);

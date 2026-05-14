@@ -115,11 +115,15 @@ public class AuthController {
      * @param authorization Authorization 헤더 (Bearer 포함)
      * @param request       Refresh Token 포함 로그아웃 요청
      * @return 200 OK
+     * @throws BusinessException Authorization 헤더가 Bearer 형식이 아닌 경우 {@link ErrorCode#AUTH_001}
      */
     @PostMapping("/logout")
     public Mono<ResponseEntity<ApiResponse<Void>>> logout(
             @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorization,
             @Valid @RequestBody final LogoutRequest request) {
+        if (!authorization.startsWith("Bearer ")) {
+            throw new BusinessException(ErrorCode.AUTH_001);
+        }
         String accessToken = authorization.substring(7);
         return authService.logout(accessToken, request.refreshToken())
                 .thenReturn(ResponseEntity.<ApiResponse<Void>>ok(
