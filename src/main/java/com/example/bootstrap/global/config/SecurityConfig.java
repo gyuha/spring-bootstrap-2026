@@ -2,10 +2,14 @@ package com.example.bootstrap.global.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.core.userdetails.MapReactiveUserDetailsService;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
@@ -35,7 +39,7 @@ public class SecurityConfig {
         return http
             .csrf(csrf -> csrf.disable())
             .httpBasic(httpBasic -> httpBasic.disable())
-            .formLogin(formLogin -> formLogin.disable())
+            .formLogin(Customizer.withDefaults())
             .authorizeExchange(exchanges -> exchanges
                 // Actuator 엔드포인트
                 .pathMatchers(
@@ -70,5 +74,13 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    @Profile("local")
+    public MapReactiveUserDetailsService localUserDetailsService(final PasswordEncoder encoder) {
+        return new MapReactiveUserDetailsService(
+            User.withUsername("user").password(encoder.encode("user")).roles("USER").build()
+        );
     }
 }
