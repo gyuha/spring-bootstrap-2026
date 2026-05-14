@@ -47,11 +47,12 @@ public class JwtAuthenticationFilter implements WebFilter {
         if (token == null) {
             return chain.filter(exchange);
         }
-        Claims claims = tryParseClaims(token);
-        if (claims == null) {
-            return chain.filter(exchange);
-        }
-        return jwtBlacklistService.isBlacklisted(token)
+        return Mono.defer(() -> {
+            Claims claims = tryParseClaims(token);
+            if (claims == null) {
+                return chain.filter(exchange);
+            }
+            return jwtBlacklistService.isBlacklisted(token)
                 .flatMap(blacklisted -> {
                     if (blacklisted) {
                         return chain.filter(exchange);
@@ -68,6 +69,7 @@ public class JwtAuthenticationFilter implements WebFilter {
                         return chain.filter(exchange);
                     }
                 });
+        });
     }
 
     private Claims tryParseClaims(final String token) {

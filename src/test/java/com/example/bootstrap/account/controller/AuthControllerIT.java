@@ -191,4 +191,44 @@ class AuthControllerIT {
                 .expectBody()
                 .jsonPath("$.code").isEqualTo("SUCCESS");
     }
+
+    @Test
+    @DisplayName("POST /auth/logout 후 동일 Access Token으로 보호 엔드포인트 접근 시 401을 반환한다")
+    void logout_thenAccessProtectedEndpoint_returns401() {
+        String uid = UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+        String email = "blk_" + uid + "@example.com";
+
+        String registerBody = String.format(
+                "{\"email\":\"%s\",\"password\":\"pass1234\",\"nickname\":\"BlacklistUser\"}", email);
+        webTestClient.post().uri(REGISTER_URL)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(registerBody)
+                .exchange()
+                .expectStatus().isCreated();
+
+        String loginBody = String.format("{\"email\":\"%s\",\"password\":\"pass1234\"}", email);
+        AtomicReference<String> accessToken = new AtomicReference<>();
+        AtomicReference<String> refreshToken = new AtomicReference<>();
+        webTestClient.post().uri(LOGIN_URL)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(loginBody)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.data.accessToken").value(at -> accessToken.set((String) at))
+                .jsonPath("$.data.refreshToken").value(rt -> refreshToken.set((String) rt));
+
+        String logoutBody = String.format("{\"refreshToken\":\"%s\"}", refreshToken.get());
+        webTestClient.post().uri(LOGOUT_URL)
+                .header("Authorization", "Bearer " + accessToken.get())
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(logoutBody)
+                .exchange()
+                .expectStatus().isOk();
+
+        webTestClient.get().uri("/api/v1/accounts/me")
+                .header("Authorization", "Bearer " + accessToken.get())
+                .exchange()
+                .expectStatus().isUnauthorized();
+    }
 }

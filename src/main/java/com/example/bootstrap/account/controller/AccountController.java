@@ -3,16 +3,17 @@ package com.example.bootstrap.account.controller;
 import com.example.bootstrap.account.application.dto.AccountResponse;
 import com.example.bootstrap.account.application.dto.UpdateProfileRequest;
 import com.example.bootstrap.account.application.service.AccountService;
-import com.example.bootstrap.global.exception.BusinessException;
-import com.example.bootstrap.global.exception.ErrorCode;
 import com.example.bootstrap.global.response.ApiResponse;
+import com.example.bootstrap.global.security.jwt.JwtBlacklistService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
@@ -31,12 +32,16 @@ import reactor.core.publisher.Mono;
 public class AccountController {
 
     private final AccountService accountService;
+    private final JwtBlacklistService jwtBlacklistService;
 
     /**
-     * @param accountService 계정 CRUD 서비스
+     * @param accountService      계정 CRUD 서비스
+     * @param jwtBlacklistService 탈퇴 시 Access Token 블랙리스트 등록
      */
-    public AccountController(final AccountService accountService) {
+    public AccountController(final AccountService accountService,
+            final JwtBlacklistService jwtBlacklistService) {
         this.accountService = accountService;
+        this.jwtBlacklistService = jwtBlacklistService;
     }
 
     /**
@@ -76,15 +81,21 @@ public class AccountController {
     /**
      * 인증된 사용자의 계정을 탈퇴 처리합니다.
      *
+     * <p>계정 삭제 후 Access Token을 블랙리스트에 등록하여 즉시 인증을 무효화합니다.
+     *
+     * @param authorization  Authorization 헤더 (Bearer 포함, 필터 통과 후 보장됨)
      * @param authentication JWT 인증 정보 (principal = userId Long)
      * @return 200 OK
      * @throws BusinessException 계정이 존재하지 않는 경우 {@link ErrorCode#ACCOUNT_002}
      */
     @DeleteMapping("/me")
     public Mono<ResponseEntity<ApiResponse<Void>>> deleteMe(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorization,
             final Authentication authentication) {
         Long userId = (Long) authentication.getPrincipal();
+        String accessToken = authorization.substring(7);
         return accountService.delete(userId)
+                .then(jwtBlacklistService.addToBlacklist(accessToken))
                 .thenReturn(ResponseEntity.<ApiResponse<Void>>ok(
                         ApiResponse.success("회원 탈퇴가 완료되었습니다.")));
     }

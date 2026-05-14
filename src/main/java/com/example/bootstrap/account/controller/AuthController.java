@@ -122,7 +122,7 @@ public class AuthController {
             @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorization,
             @Valid @RequestBody final LogoutRequest request) {
         if (!authorization.startsWith("Bearer ")) {
-            throw new BusinessException(ErrorCode.AUTH_001);
+            return Mono.error(new BusinessException(ErrorCode.AUTH_001));
         }
         String accessToken = authorization.substring(7);
         return authService.logout(accessToken, request.refreshToken())

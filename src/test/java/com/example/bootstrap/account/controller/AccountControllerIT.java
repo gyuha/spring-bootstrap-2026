@@ -108,8 +108,8 @@ class AccountControllerIT {
     }
 
     @Test
-    @DisplayName("DELETE /accounts/me 후 다시 GET /accounts/me 요청하면 404를 반환한다")
-    void deleteMe_thenGetMe_returns404() {
+    @DisplayName("DELETE /accounts/me 후 다시 GET /accounts/me 요청하면 401을 반환한다 (Access Token 블랙리스트)")
+    void deleteMe_thenGetMe_returns401() {
         webTestClient.delete().uri("/api/v1/accounts/me")
                 .header("Authorization", "Bearer " + accessToken)
                 .exchange()
@@ -118,6 +118,6 @@ class AccountControllerIT {
         webTestClient.get().uri("/api/v1/accounts/me")
                 .header("Authorization", "Bearer " + accessToken)
                 .exchange()
-                .expectStatus().isNotFound();
+                .expectStatus().isUnauthorized();
     }
 }
