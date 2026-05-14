@@ -1,5 +1,6 @@
 package com.example.bootstrap.global.config;
 
+import com.example.bootstrap.global.security.jwt.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -7,6 +8,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.userdetails.MapReactiveUserDetailsService;
 import org.springframework.security.core.userdetails.User;
@@ -35,11 +37,14 @@ public class SecurityConfig {
      * @return 구성된 {@link SecurityWebFilterChain}
      */
     @Bean
-    public SecurityWebFilterChain securityWebFilterChain(final ServerHttpSecurity http) {
+    public SecurityWebFilterChain securityWebFilterChain(
+            final ServerHttpSecurity http,
+            final JwtAuthenticationFilter jwtAuthenticationFilter) {
         return http
             .csrf(csrf -> csrf.disable())
             .httpBasic(httpBasic -> httpBasic.disable())
             .formLogin(Customizer.withDefaults())
+            .addFilterAt(jwtAuthenticationFilter, SecurityWebFiltersOrder.AUTHENTICATION)
             .authorizeExchange(exchanges -> exchanges
                 // Actuator 엔드포인트
                 .pathMatchers(
