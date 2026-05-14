@@ -17,7 +17,11 @@ import reactor.core.publisher.Mono;
 /**
  * 인증 서비스.
  *
- * <p>로그인, 토큰 갱신(Rotation), 로그아웃을 처리합니다.
+ * <p>이메일/비밀번호 로그인, Refresh Token Rotation, 로그아웃을 처리합니다.
+ * Refresh Token은 사용 시마다 교체되며(Rotation), 사용된 토큰은 DB에서 삭제됩니다.
+ * 로그아웃 시 Access Token은 Redis 블랙리스트에 등록되어 만료 전 재사용을 방지합니다.
+ *
+ * <p>모든 연산은 Non-blocking Reactive 파이프라인으로 구현됩니다.
  */
 @Service
 public class AuthService {
@@ -53,6 +57,7 @@ public class AuthService {
      *
      * @param request 로그인 요청
      * @return 발급된 Access/Refresh 토큰
+     * @throws BusinessException 이메일이 없거나 비밀번호가 틀린 경우 {@link ErrorCode#AUTH_004}
      */
     public Mono<TokenResponse> login(final LoginRequest request) {
         return accountRepository.findByEmail(request.email())
@@ -71,25 +76,29 @@ public class AuthService {
      *
      * @param refreshToken 기존 Refresh Token
      * @return 새로 발급된 Access/Refresh 토큰
+     * @throws BusinessException 만료 토큰 {@link ErrorCode#AUTH_002}, 블랙리스트 {@link ErrorCode#AUTH_003},
+     *                           재사용 감지 {@link ErrorCode#AUTH_005}, 계정 없음 {@link ErrorCode#ACCOUNT_002}
      */
     public Mono<TokenResponse> refresh(final String refreshToken) {
-        if (!jwtTokenProvider.isValid(refreshToken)) {
-            return Mono.error(new BusinessException(ErrorCode.AUTH_002));
-        }
-        return jwtBlacklistService.isBlacklisted(refreshToken)
-                .flatMap(blacklisted -> {
-                    if (blacklisted) {
-                        return Mono.<TokenResponse>error(new BusinessException(ErrorCode.AUTH_003));
-                    }
-                    return refreshTokenRepository.findByToken(refreshToken)
-                            .switchIfEmpty(Mono.error(new BusinessException(ErrorCode.AUTH_005)))
-                            .flatMap(tokenEntity ->
-                                    refreshTokenRepository.deleteByUserId(tokenEntity.getUserId())
-                                            .then(accountRepository.findById(tokenEntity.getUserId()))
-                                            .switchIfEmpty(Mono.error(
-                                                    new BusinessException(ErrorCode.ACCOUNT_002)))
-                                            .flatMap(this::issueTokens));
-                });
+        return Mono.defer(() -> {
+            if (!jwtTokenProvider.isValid(refreshToken)) {
+                return Mono.error(new BusinessException(ErrorCode.AUTH_002));
+            }
+            return jwtBlacklistService.isBlacklisted(refreshToken)
+                    .flatMap(blacklisted -> {
+                        if (blacklisted) {
+                            return Mono.<TokenResponse>error(new BusinessException(ErrorCode.AUTH_003));
+                        }
+                        return refreshTokenRepository.findByToken(refreshToken)
+                                .switchIfEmpty(Mono.error(new BusinessException(ErrorCode.AUTH_005)))
+                                .flatMap(tokenEntity ->
+                                        refreshTokenRepository.deleteByUserId(tokenEntity.getUserId())
+                                                .then(accountRepository.findById(tokenEntity.getUserId()))
+                                                .switchIfEmpty(Mono.error(
+                                                        new BusinessException(ErrorCode.ACCOUNT_002)))
+                                                .flatMap(this::issueTokens));
+                    });
+        });
     }
 
     /**
@@ -98,6 +107,7 @@ public class AuthService {
      * @param accessToken  현재 Access Token
      * @param refreshToken 현재 Refresh Token
      * @return 완료 시그널
+     * <p>Refresh Token이 DB에 없어도 정상 완료됩니다 (멱등).
      */
     public Mono<Void> logout(final String accessToken, final String refreshToken) {
         return jwtBlacklistService.addToBlacklist(accessToken)

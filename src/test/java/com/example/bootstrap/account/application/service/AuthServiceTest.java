@@ -136,7 +136,7 @@ class AuthServiceTest {
         when(jwtTokenProvider.isValid(REFRESH_TOKEN)).thenReturn(true);
         when(jwtBlacklistService.isBlacklisted(REFRESH_TOKEN)).thenReturn(Mono.just(false));
         when(refreshTokenRepository.findByToken(REFRESH_TOKEN)).thenReturn(Mono.just(tokenEntity));
-        when(refreshTokenRepository.deleteByUserId(1L)).thenReturn(Mono.empty());
+        when(refreshTokenRepository.deleteByUserId(1L)).thenReturn(Mono.<Void>empty());
         when(accountRepository.findById(1L)).thenReturn(Mono.just(account));
         when(jwtTokenProvider.generateAccessToken(1L, EMAIL, "USER")).thenReturn("new.access.token");
         when(jwtTokenProvider.generateRefreshToken(1L)).thenReturn("new.refresh.token");
@@ -196,6 +196,25 @@ class AuthServiceTest {
                 .verify();
     }
 
+    @Test
+    @DisplayName("refresh: Refresh Token은 유효하지만 해당 userId의 계정이 없으면 BusinessException(ACCOUNT_002)을 발생시킨다")
+    void refresh_whenAccountNotFound_throwsAccount002() {
+        RefreshToken tokenEntity = buildRefreshToken(10L, 99L, REFRESH_TOKEN);
+
+        when(jwtTokenProvider.isValid(REFRESH_TOKEN)).thenReturn(true);
+        when(jwtBlacklistService.isBlacklisted(REFRESH_TOKEN)).thenReturn(Mono.just(false));
+        when(refreshTokenRepository.findByToken(REFRESH_TOKEN)).thenReturn(Mono.just(tokenEntity));
+        when(refreshTokenRepository.deleteByUserId(99L)).thenReturn(Mono.<Void>empty());
+        when(accountRepository.findById(99L)).thenReturn(Mono.empty());
+
+        StepVerifier.create(authService.refresh(REFRESH_TOKEN))
+                .expectErrorSatisfies(e -> {
+                    assertThat(e).isInstanceOf(BusinessException.class);
+                    assertThat(((BusinessException) e).getErrorCode()).isEqualTo(ErrorCode.ACCOUNT_002);
+                })
+                .verify();
+    }
+
     // ── logout ─────────────────────────────────────────────────────────────
 
     @Test
@@ -205,7 +224,7 @@ class AuthServiceTest {
 
         when(jwtBlacklistService.addToBlacklist(ACCESS_TOKEN)).thenReturn(Mono.just(true));
         when(refreshTokenRepository.findByToken(REFRESH_TOKEN)).thenReturn(Mono.just(tokenEntity));
-        when(refreshTokenRepository.delete(tokenEntity)).thenReturn(Mono.empty());
+        when(refreshTokenRepository.delete(tokenEntity)).thenReturn(Mono.<Void>empty());
 
         StepVerifier.create(authService.logout(ACCESS_TOKEN, REFRESH_TOKEN))
                 .verifyComplete();
