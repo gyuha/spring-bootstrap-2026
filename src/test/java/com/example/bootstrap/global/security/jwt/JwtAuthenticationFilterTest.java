@@ -22,6 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -52,7 +53,7 @@ class JwtAuthenticationFilterTest {
         StepVerifier.create(filter.filter(exchange, chain))
                 .verifyComplete();
 
-        verify(jwtTokenProvider, never()).isValid(TOKEN);
+        verifyNoInteractions(jwtTokenProvider);
     }
 
     @Test
@@ -62,7 +63,7 @@ class JwtAuthenticationFilterTest {
                 MockServerHttpRequest.get("/api/test")
                         .header(HttpHeaders.AUTHORIZATION, BEARER_TOKEN).build());
 
-        when(jwtTokenProvider.isValid(TOKEN)).thenReturn(false);
+        when(jwtTokenProvider.parseClaims(TOKEN)).thenThrow(new io.jsonwebtoken.JwtException("invalid"));
         when(chain.filter(exchange)).thenReturn(Mono.empty());
 
         StepVerifier.create(filter.filter(exchange, chain))
@@ -78,14 +79,15 @@ class JwtAuthenticationFilterTest {
                 MockServerHttpRequest.get("/api/test")
                         .header(HttpHeaders.AUTHORIZATION, BEARER_TOKEN).build());
 
-        when(jwtTokenProvider.isValid(TOKEN)).thenReturn(true);
+        Claims claims = mock(Claims.class);
+        when(jwtTokenProvider.parseClaims(TOKEN)).thenReturn(claims);
         when(jwtBlacklistService.isBlacklisted(TOKEN)).thenReturn(Mono.just(true));
         when(chain.filter(exchange)).thenReturn(Mono.empty());
 
         StepVerifier.create(filter.filter(exchange, chain))
                 .verifyComplete();
 
-        verify(jwtTokenProvider, never()).parseClaims(TOKEN);
+        verify(jwtTokenProvider, never()).isValid(TOKEN);
     }
 
     @Test
@@ -99,9 +101,8 @@ class JwtAuthenticationFilterTest {
         when(claims.getSubject()).thenReturn("42");
         when(claims.get(JwtTokenProvider.CLAIM_ROLE, String.class)).thenReturn("USER");
 
-        when(jwtTokenProvider.isValid(TOKEN)).thenReturn(true);
-        when(jwtBlacklistService.isBlacklisted(TOKEN)).thenReturn(Mono.just(false));
         when(jwtTokenProvider.parseClaims(TOKEN)).thenReturn(claims);
+        when(jwtBlacklistService.isBlacklisted(TOKEN)).thenReturn(Mono.just(false));
 
         AtomicReference<Authentication> captured = new AtomicReference<>();
         when(chain.filter(exchange)).thenAnswer(inv ->
@@ -131,6 +132,6 @@ class JwtAuthenticationFilterTest {
         StepVerifier.create(filter.filter(exchange, chain))
                 .verifyComplete();
 
-        verify(jwtTokenProvider, never()).isValid(TOKEN);
+        verifyNoInteractions(jwtTokenProvider);
     }
 }

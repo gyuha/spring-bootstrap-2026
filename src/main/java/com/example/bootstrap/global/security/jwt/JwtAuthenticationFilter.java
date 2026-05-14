@@ -44,7 +44,11 @@ public class JwtAuthenticationFilter implements WebFilter {
     @Override
     public Mono<Void> filter(final ServerWebExchange exchange, final WebFilterChain chain) {
         String token = resolveToken(exchange.getRequest());
-        if (token == null || !jwtTokenProvider.isValid(token)) {
+        if (token == null) {
+            return chain.filter(exchange);
+        }
+        Claims claims = tryParseClaims(token);
+        if (claims == null) {
             return chain.filter(exchange);
         }
         return jwtBlacklistService.isBlacklisted(token)
@@ -52,15 +56,26 @@ public class JwtAuthenticationFilter implements WebFilter {
                     if (blacklisted) {
                         return chain.filter(exchange);
                     }
-                    Claims claims = jwtTokenProvider.parseClaims(token);
-                    Long userId = Long.parseLong(claims.getSubject());
-                    String role = claims.get(JwtTokenProvider.CLAIM_ROLE, String.class);
-                    Authentication auth = new UsernamePasswordAuthenticationToken(
-                            userId, null,
-                            List.of(new SimpleGrantedAuthority("ROLE_" + role)));
-                    return chain.filter(exchange)
-                            .contextWrite(ReactiveSecurityContextHolder.withAuthentication(auth));
+                    try {
+                        Long userId = Long.parseLong(claims.getSubject());
+                        String role = claims.get(JwtTokenProvider.CLAIM_ROLE, String.class);
+                        Authentication auth = new UsernamePasswordAuthenticationToken(
+                                userId, null,
+                                List.of(new SimpleGrantedAuthority("ROLE_" + role)));
+                        return chain.filter(exchange)
+                                .contextWrite(ReactiveSecurityContextHolder.withAuthentication(auth));
+                    } catch (NumberFormatException e) {
+                        return chain.filter(exchange);
+                    }
                 });
+    }
+
+    private Claims tryParseClaims(final String token) {
+        try {
+            return jwtTokenProvider.parseClaims(token);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private String resolveToken(final ServerHttpRequest request) {
