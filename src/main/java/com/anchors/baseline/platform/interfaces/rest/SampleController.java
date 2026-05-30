@@ -2,6 +2,8 @@ package com.anchors.baseline.platform.interfaces.rest;
 
 import com.anchors.baseline.platform.application.SampleApplicationService;
 import com.anchors.baseline.platform.application.SampleDto;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,17 +20,20 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/samples")
+@Tag(name = "Sample", description = "platform 샘플 API")
 public class SampleController {
 
     private final SampleApplicationService sampleApplicationService;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "샘플 생성")
     public Long create(@RequestBody CreateSampleRequest request) {
         return sampleApplicationService.save(request.value());
     }
 
     @GetMapping
+    @Operation(summary = "샘플 전체 조회")
     public List<SampleDto> findAll() {
         return sampleApplicationService.findAll();
     }

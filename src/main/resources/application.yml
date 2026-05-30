@@ -40,6 +40,16 @@ mybatis:
     # created_at → createdAt 등 snake_case 컬럼을 camelCase 프로퍼티로 자동 매핑
     map-underscore-to-camel-case: true
 
+springdoc:
+  # T-02 보안 주의: Swagger UI / api-docs는 dev 전용. 운영 배포 전 반드시
+  # springdoc.api-docs.enabled=false로 비활성화하거나 인증 뒤로 격리할 것
+  # (BFF/NFR-02 — 액세스 토큰 브라우저 비노출 원칙). Spring Security 도입(Phase 3/4) 후 인가 연동.
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+
 management:
   endpoints:
     web:

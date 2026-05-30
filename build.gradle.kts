@@ -31,6 +31,8 @@ dependencies {
 
     implementation(libs.mybatis.spring.boot.starter)
 
+    implementation(libs.springdoc.openapi.starter.webmvc.ui)
+
     implementation("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-database-postgresql")
 
