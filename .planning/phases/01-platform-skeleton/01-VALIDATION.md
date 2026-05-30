@@ -1,8 +1,8 @@
 ---
 phase: 1
 slug: platform-skeleton
-status: draft
-nyquist_compliant: false
+status: approved
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-05-30
 ---
@@ -81,6 +81,6 @@ created: 2026-05-30
 - [ ] Wave 0가 모든 MISSING 참조를 커버
 - [ ] watch-mode 플래그 없음
 - [ ] 피드백 지연 < 120초
-- [ ] `nyquist_compliant: true` frontmatter 설정
+- [x] `nyquist_compliant: true` frontmatter 설정 (계획 검증 통과 — plan-checker)
 
-**Approval:** pending
+**Approval:** approved 2026-05-30 (plan-checker 검증 통과; `wave_0_complete`는 실행 단계에서 갱신)

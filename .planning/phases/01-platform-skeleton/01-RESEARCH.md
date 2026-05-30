@@ -828,17 +828,15 @@ services:
 
 ---
 
-## 미결 질문
+## 미결 질문 (RESOLVED)
 
-1. **SampleEntity/Mapper 구현 범위**
+1. **SampleEntity/Mapper 구현 범위** — RESOLVED: `platform` 컨텍스트 안(main 소스셋)에 최소 검증용 `SampleEntity`/`SampleMapper`를 배치한다. 골격을 실제 동작 상태로 유지해 "복제해서 사용하는 템플릿" 목적에 부합. (계획 01-04에서 확정)
    - 아는 것: D-04 검증은 "JPA 쓰기 + MyBatis 조회 단일 트랜잭션"을 증명해야 한다
-   - 불명확한 것: 검증용 `SampleEntity`와 `SampleMapper`를 `platform` 컨텍스트 안에 두어야 하는가, 아니면 `test` 소스셋에만 두어야 하는가 (D-04: "검증 슬라이스 위치는 planner 재량")
-   - 권고사항: `platform` 컨텍스트 안에 최소한의 검증용 엔티티/매퍼를 두어 골격을 실제로 동작하는 상태로 유지하는 것이 "복제해서 사용하는 템플릿" 목적에 부합한다
+   - 결정: `platform.domain.model.SampleEntity`, `platform.infrastructure.mybatis.SampleMapper`로 배치
 
-2. **Redis `@ServiceConnection` 방식 선택**
-   - 아는 것: `GenericContainer` + `@ServiceConnection(name="redis")` 또는 `com.redis.testcontainers:RedisContainer` + `@ServiceConnection` 두 방식이 모두 동작한다
-   - 불명확한 것: `testcontainers-redis` (com.redis) 라이브러리 추가 없이 `GenericContainer`로 충분한가
-   - 권고사항: 추가 의존성 없이 `GenericContainer + @ServiceConnection(name="redis")` 패턴 사용
+2. **Redis `@ServiceConnection` 방식 선택** — RESOLVED: 추가 의존성 없이 `GenericContainer` + `@ServiceConnection(name="redis")` 패턴 채택. (계획 01-02에서 확정)
+   - 아는 것: `GenericContainer` + `@ServiceConnection(name="redis")` 또는 `com.redis.testcontainers:RedisContainer` 두 방식 모두 동작
+   - 결정: `testcontainers-redis` 라이브러리 미추가, `GenericContainer` 사용
 
 ---
 
