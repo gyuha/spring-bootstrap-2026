@@ -72,20 +72,40 @@
 
 ## Traceability
 
-phase 매핑은 로드맵 생성 시 채워진다.
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PLAT-01~06 | TBD | Pending |
-| IDEN-01~06 | TBD | Pending |
-| AUTH-01~05 | TBD | Pending |
-| AUTHZ-01~09 | TBD | Pending |
+| PLAT-01 | Phase 1 | Pending |
+| PLAT-02 | Phase 1 | Pending |
+| PLAT-03 | Phase 1 | Pending |
+| PLAT-04 | Phase 1 | Pending |
+| PLAT-05 | Phase 1 | Pending |
+| PLAT-06 | Phase 1 | Pending |
+| IDEN-01 | Phase 2 | Pending |
+| IDEN-02 | Phase 2 | Pending |
+| IDEN-03 | Phase 2 | Pending |
+| IDEN-04 | Phase 2 | Pending |
+| IDEN-05 | Phase 2 | Pending |
+| IDEN-06 | Phase 2 | Pending |
+| AUTH-01 | Phase 3 | Pending |
+| AUTH-02 | Phase 3 | Pending |
+| AUTH-03 | Phase 3 | Pending |
+| AUTH-04 | Phase 3 | Pending |
+| AUTH-05 | Phase 3 | Pending |
+| AUTHZ-01 | Phase 4 | Pending |
+| AUTHZ-02 | Phase 4 | Pending |
+| AUTHZ-03 | Phase 4 | Pending |
+| AUTHZ-04 | Phase 4 | Pending |
+| AUTHZ-05 | Phase 4 | Pending |
+| AUTHZ-06 | Phase 4 | Pending |
+| AUTHZ-07 | Phase 4 | Pending |
+| AUTHZ-08 | Phase 4 | Pending |
+| AUTHZ-09 | Phase 4 | Pending |
 
 **Coverage:**
 - v1 requirements: 26 total
-- Mapped to phases: 0 (로드맵 생성 시 갱신)
-- Unmapped: 26 ⚠️
+- Mapped to phases: 26
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-05-30*
-*Last updated: 2026-05-30 after initial definition*
+*Last updated: 2026-05-30 after roadmap creation*
