@@ -1,3 +1,18 @@
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: milestone
+status: planning
+last_updated: "2026-05-30T11:31:33.209Z"
+last_activity: 2026-05-30 — ROADMAP.md 및 STATE.md 초기화 완료
+progress:
+  total_phases: 4
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
+---
+
 # 프로젝트 상태
 
 ## 프로젝트 참조
@@ -19,6 +34,7 @@ Progress: [░░░░░░░░░░] 0%
 ## 성능 지표
 
 **속도:**
+
 - 완료된 플랜 수: 0
 - 평균 소요 시간: -
 - 총 실행 시간: -
@@ -30,6 +46,7 @@ Progress: [░░░░░░░░░░] 0%
 | - | - | - | - |
 
 **최근 추세:**
+
 - 최근 5개 플랜: -
 - 추세: -
 
