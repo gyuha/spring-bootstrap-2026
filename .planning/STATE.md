@@ -31,6 +31,14 @@ Last activity: 2026-05-30
 
 Progress: [██▌░░░░░░░] 25%
 
+## 빠른 작업 (Quick Tasks)
+
+### Quick Tasks Completed
+
+| Quick ID | 설명 | 날짜 | 커밋 | 아티팩트 |
+|----------|------|------|------|----------|
+| 260530-vep | 현재 프로젝트에 swagger를 추가 스팩으로 넣어 줘 | 2026-05-30 | (pending) | [260530-vep-swagger](./quick/260530-vep-swagger/) |
+
 ## 성능 지표
 
 **속도:**
