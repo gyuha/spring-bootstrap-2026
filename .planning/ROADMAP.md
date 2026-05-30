@@ -65,7 +65,19 @@ Plans:
   4. IdP 출처 필드(이름 등)는 linkIdentity 시 갱신되고, 관리자 입력 필드는 덮어쓰이지 않는다
   5. 로그인 후 매칭은 이메일이 아닌 불변 로컬 PK(`User.id`)로만 이루어진다
 
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+**Wave 1**
+
+- [ ] 02-01-PLAN.md — Identity 도메인 계층 + Flyway V2 (User 애그리거트, Email/UserStatus VO, UserDisabled 이벤트, InvalidStateTransition, UserRepository 포트, users 테이블)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 02-02-PLAN.md — 인프라 어댑터 + 애플리케이션 서비스 (UserJpaRepository, IdentityApplicationService, EmailAlreadyExists)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 02-03-PLAN.md — Wave 0 테스트 완성 및 전체 스위트 GREEN (UserTest 단위, UserLifecycleIT 통합, SC#1~5·IDEN-01~06 검증)
 
 ### Phase 3: BFF 인증
 
@@ -104,6 +116,6 @@ Phase 1 → Phase 2 → Phase 3 → Phase 4
 | Phase | 완료된 플랜 | 상태 | 완료일 |
 |-------|------------|------|--------|
 | 1. 플랫폼 골격 | 0/5 | Planning complete | - |
-| 2. Identity 컨텍스트 | 0/TBD | Not started | - |
+| 2. Identity 컨텍스트 | 0/3 | Planning complete | - |
 | 3. BFF 인증 | 0/TBD | Not started | - |
 | 4. Authorization 컨텍스트 | 0/TBD | Not started | - |
