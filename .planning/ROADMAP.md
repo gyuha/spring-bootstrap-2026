@@ -29,7 +29,14 @@
   3. Flyway 마이그레이션이 실행되고 `flyway_schema_history`에 기록이 남는다
   4. JPA 쓰기와 MyBatis 조회가 동일 DataSource·단일 트랜잭션에서 동작한다
   5. `/actuator/health`가 앱·DB(PostgreSQL)·Redis 상태를 모두 반환한다
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Gradle 빌드 설정 + BaselineApplication (Java 21, 의존성, flyway-database-postgresql)
+- [ ] 01-02-PLAN.md — Wave 0 테스트 스텁 (ArchitectureTest, AbstractIntegrationTest, 통합 테스트 파일 6종)
+- [ ] 01-03-PLAN.md — 앱 설정 + Flyway 마이그레이션 + Docker Compose (application.yml, V1 SQL, compose.yaml)
+- [ ] 01-04-PLAN.md — platform/common 계층 골격 (SampleEntity, SampleMapper, application/interfaces 계층)
+- [ ] 01-05-PLAN.md — 통합 테스트 완성 및 전체 스위트 GREEN (SC#1~5 모두 검증)
 
 ### Phase 2: Identity 컨텍스트
 **Goal**: 사용자 식별의 진실 공급원인 Identity 도메인이 초대·신원 연결·비활성화 생명주기를 DDD 애그리거트로 구현한다
@@ -73,7 +80,7 @@ Phase 1 → Phase 2 → Phase 3 → Phase 4
 
 | Phase | 완료된 플랜 | 상태 | 완료일 |
 |-------|------------|------|--------|
-| 1. 플랫폼 골격 | 0/TBD | Not started | - |
+| 1. 플랫폼 골격 | 0/5 | Planning complete | - |
 | 2. Identity 컨텍스트 | 0/TBD | Not started | - |
 | 3. BFF 인증 | 0/TBD | Not started | - |
 | 4. Authorization 컨텍스트 | 0/TBD | Not started | - |
