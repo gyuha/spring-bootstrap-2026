@@ -1,0 +1,21 @@
+[versions]
+spring-boot = "3.5.3"
+mybatis-spring-boot = "3.0.4"
+archunit = "1.4.1"
+testcontainers = "1.21.3"
+lombok = "1.18.38"
+
+[libraries]
+# MyBatis (Spring Boot BOM 관리 밖 — 3.0.4 고정, 4.0.0 금지)
+mybatis-spring-boot-starter = { module = "org.mybatis.spring.boot:mybatis-spring-boot-starter", version.ref = "mybatis-spring-boot" }
+
+# ArchUnit
+archunit-junit5 = { module = "com.tngtech.archunit:archunit-junit5", version.ref = "archunit" }
+
+# Testcontainers (Spring Boot BOM에서 버전 관리)
+testcontainers-postgresql = { module = "org.testcontainers:postgresql" }
+testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter" }
+
+[plugins]
+spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
+spring-dependency-management = { id = "io.spring.dependency-management", version = "1.1.7" }

@@ -1,0 +1,64 @@
+spring:
+  application:
+    name: baseline
+
+  # PLAT-01: 가상 스레드 활성화 (Spring Boot 3.2+ Tomcat/MVC 자동 적용)
+  threads:
+    virtual:
+      enabled: true
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/baseline
+    username: baseline
+    password: baseline
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      # Flyway가 스키마를 관리하므로 create/update 금지 — 정합성만 검증
+      ddl-auto: validate
+    show-sql: false
+    open-in-view: false   # OSIV off — 계층 경계 유지 (View 렌더링 중 세션 열림 방지)
+    properties:
+      hibernate:
+        format_sql: false
+
+  flyway:
+    # flyway-database-postgresql이 클래스패스에 있어 별도 url 불필요
+    locations: classpath:db/migration
+    baseline-on-migrate: false   # greenfield — 기존 DB 없음
+    validate-on-migrate: true
+
+  data:
+    redis:
+      # Phase 1: 비밀번호 없음 (로컬 개발), Lettuce 클라이언트 기본 사용
+      host: localhost
+      port: 6379
+
+mybatis:
+  configuration:
+    # created_at → createdAt 등 snake_case 컬럼을 camelCase 프로퍼티로 자동 매핑
+    map-underscore-to-camel-case: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      # dev-only — 운영 배포 전 when_authorized로 변경 필요 (T-01 보안 주의)
+      show-details: always
+      show-components: always
+  health:
+    db:
+      enabled: true
+    redis:
+      enabled: true
+    diskspace:
+      enabled: false   # Phase 1: 불필요
+
+logging:
+  level:
+    com.anchors.baseline: DEBUG
+    org.flywaydb: INFO
