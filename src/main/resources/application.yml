@@ -46,6 +46,8 @@ spring:
       namespace: "spring:session:baseline"
 
 mybatis:
+  # XML 매퍼(재귀 CTE) 위치 — @Mapper 인터페이스 + 동명 XML namespace 바인딩
+  mapper-locations: classpath*:mybatis/*.xml
   configuration:
     # created_at → createdAt 등 snake_case 컬럼을 camelCase 프로퍼티로 자동 매핑
     map-underscore-to-camel-case: true
