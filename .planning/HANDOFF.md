@@ -59,3 +59,4 @@
 | 2026-05-31T14:34:32Z | 06-me-aggregation | sg-next | sg-retro | - | gyuha |
 | 2026-05-31T14:34:42Z | 06-me-aggregation | sg-retro | sg-next | - | gyuha |
 | 2026-05-31T14:40:55Z | 06-me-aggregation | sg-next | ship | - | gyuha |
+| 2026-05-31T14:44:49Z | 06-me-aggregation | ship | sg-next | - | gyuha |
