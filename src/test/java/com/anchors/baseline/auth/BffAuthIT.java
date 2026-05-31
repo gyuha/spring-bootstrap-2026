@@ -289,7 +289,7 @@ class BffAuthIT extends AbstractIntegrationTest {
             headers.add("X-XSRF-TOKEN", csrfCookie);
         }
         headers.add(HttpHeaders.COOKIE, cookie.toString());
-        rest.exchange(baseUrl() + "/logout", HttpMethod.POST, new HttpEntity<>(headers), Void.class);
+        rest.exchange(baseUrl() + "/api/auth/logout", HttpMethod.POST, new HttpEntity<>(headers), Void.class);
     }
 
     private HttpStatus meStatus(String sessionCookie) {
