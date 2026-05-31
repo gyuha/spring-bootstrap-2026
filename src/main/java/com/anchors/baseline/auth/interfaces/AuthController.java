@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * BFF 인증 세션 엔드포인트(AUTH-06/10). SPA 가 401 노이즈 없이 인증 여부를 판별하고(/session)
@@ -76,8 +78,13 @@ public class AuthController {
      */
     @GetMapping("/me")
     public MeResponse me(@AuthenticationPrincipal OidcUser principal) {
-        // user_id 는 IdP claim 타입에 따라 Integer/Long 으로 역직렬화될 수 있어 Number 상위 캐스팅으로 안전화.
-        long userId = ((Number) principal.getAttribute("user_id")).longValue();
+        // 인증은 통과했으나 user_id attribute 가 없거나(미배선·표준 OidcUser) 숫자가 아니면 신원 식별 불가 →
+        // 500 이 아니라 401 로 안전 실패한다(MeController 의 null-tolerant 선례와 일관). instanceof Number 로
+        // null·타입불일치를 동시에 막는다. IdP claim 타입에 따라 Integer/Long 모두 longValue() 로 정규화.
+        if (!(principal.getAttribute("user_id") instanceof Number rawId)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "principal 에 user_id attribute 가 없습니다");
+        }
+        long userId = rawId.longValue();
         UserView identity = identityService.findUser(userId);
         PermissionView permissions = authorizationService.findPermissions(userId);
         return MeResponse.of(identity, permissions);
