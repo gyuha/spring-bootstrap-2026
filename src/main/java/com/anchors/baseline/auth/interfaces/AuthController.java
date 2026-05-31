@@ -1,5 +1,9 @@
 package com.anchors.baseline.auth.interfaces;
 
+import com.anchors.baseline.authorization.application.AuthorizationApplicationService;
+import com.anchors.baseline.authorization.application.PermissionView;
+import com.anchors.baseline.identity.application.IdentityApplicationService;
+import com.anchors.baseline.identity.application.UserView;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -38,10 +42,18 @@ public class AuthController {
      */
     private final String oidcRegistrationId;
 
+    /** /api/auth/me 신원·권한 집계용 — 교차 컨텍스트 application 서비스(ArchUnit interfaces→application 허용, D-06). */
+    private final IdentityApplicationService identityService;
+    private final AuthorizationApplicationService authorizationService;
+
     public AuthController(ObjectProvider<ClientRegistrationRepository> clientRegistrationRepository,
-                          @Value("${app.auth.oidc-registration-id:test-idp}") String oidcRegistrationId) {
+                          @Value("${app.auth.oidc-registration-id:test-idp}") String oidcRegistrationId,
+                          IdentityApplicationService identityService,
+                          AuthorizationApplicationService authorizationService) {
         this.clientRegistrationRepository = clientRegistrationRepository;
         this.oidcRegistrationId = oidcRegistrationId;
+        this.identityService = identityService;
+        this.authorizationService = authorizationService;
     }
 
     /**
@@ -54,6 +66,21 @@ public class AuthController {
             return new SessionResponse(false, null);
         }
         return new SessionResponse(true, principal.getAttribute("user_id"));
+    }
+
+    /**
+     * 신원·권한 집계 엔드포인트(AUTH-08/09). 인증 사용자의 신원(userId/email/status)과 직접 부여 권한
+     * (roles/menus/resources)을 단일 응답으로 반환한다. 비인증 시 SecurityConfig {@code /api/**} 보호 매처가
+     * 401 을 먼저 응답하므로 principal null 분기가 없다(D-05). 권한은 직접 부여(direct grant)만 포함 —
+     * 그룹·계층 상속 미포함(D-02).
+     */
+    @GetMapping("/me")
+    public MeResponse me(@AuthenticationPrincipal OidcUser principal) {
+        // user_id 는 IdP claim 타입에 따라 Integer/Long 으로 역직렬화될 수 있어 Number 상위 캐스팅으로 안전화.
+        long userId = ((Number) principal.getAttribute("user_id")).longValue();
+        UserView identity = identityService.findUser(userId);
+        PermissionView permissions = authorizationService.findPermissions(userId);
+        return MeResponse.of(identity, permissions);
     }
 
     /**
