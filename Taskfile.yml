@@ -1,0 +1,46 @@
+version: '3'
+
+tasks:
+  build:
+    desc: 프로젝트 빌드 (테스트 제외)
+    cmd: ./gradlew build -x test
+
+  run:
+    desc: 애플리케이션 실행 (compose.yaml 컨테이너 자동기동, UTC + 핀닝 추적)
+    cmd: ./gradlew bootRun --args='--spring.profiles.active=local' -Duser.timezone=UTC -Djdk.tracePinnedThreads=full
+
+  test:
+    desc: 전체 테스트 실행
+    cmd: ./gradlew test
+
+  migrate:
+    desc: Flyway 마이그레이션 실행
+    cmd: ./gradlew flywayMigrate
+
+  ci:
+    desc: 로컬 CI (빌드 + 테스트 + 영속 DB 라이브 부팅 검증)
+    cmds:
+      - task: build
+      - task: test
+      - cmd: |
+          set -e
+          echo "[ci] 영속 DB 라이브 부팅 검증 시작 (Flyway checksum mismatch 검출)..."
+          ./gradlew bootRun --args='--spring.profiles.active=local' \
+            -Duser.timezone=UTC -Djdk.tracePinnedThreads=full > /tmp/bootstrap-ci-boot.log 2>&1 &
+          BOOT_PID=$!
+          trap 'kill $BOOT_PID 2>/dev/null || true' EXIT
+          UP=0
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8080/actuator/health 2>/dev/null | grep -q '"status":"UP"'; then
+              UP=1
+              echo "[ci] actuator/health UP 확인 (${i}s)"
+              break
+            fi
+            sleep 1
+          done
+          if [ "$UP" -ne 1 ]; then
+            echo "[ci] FAIL: 30초 내 actuator/health UP 미확인" >&2
+            tail -50 /tmp/bootstrap-ci-boot.log >&2
+            exit 1
+          fi
+          echo "[ci] 라이브 부팅 검증 통과"

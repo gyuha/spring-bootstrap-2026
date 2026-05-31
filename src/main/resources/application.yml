@@ -1,0 +1,26 @@
+spring:
+  threads:
+    virtual:
+      enabled: true                    # Java 21 가상 스레드 (D-03)
+  jpa:
+    open-in-view: false                # 안티패턴 방지 (D-12)
+    hibernate:
+      ddl-auto: validate               # Flyway가 스키마 소유 (D-12)
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC               # 시간 UTC 고정 (D-13)
+        format_sql: true
+  flyway:
+    enabled: true
+    validate-on-migrate: true          # 체크섬 검증 항상 켜둠
+    baseline-on-migrate: false         # greenfield — baseline 불필요
+  mvc:
+    problemdetails:
+      enabled: true                    # RFC 9457 ProblemDetail 전역 활성화 (D-18)
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
