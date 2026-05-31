@@ -13,6 +13,7 @@ import com.anchors.baseline.authorization.domain.repository.GroupRepository;
 import com.anchors.baseline.authorization.domain.repository.MenuGrantRepository;
 import com.anchors.baseline.authorization.domain.repository.ResourceGrantRepository;
 import com.anchors.baseline.authorization.domain.repository.ResourceHierarchyRepository;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -95,5 +96,26 @@ public class AuthorizationApplicationService {
     // AUTHZ-05: 리소스 계층
     public void defineHierarchy(long resourceId, Long parentResourceId) {
         resourceHierarchyRepository.save(ResourceHierarchy.of(resourceId, parentResourceId));
+    }
+
+    /**
+     * AUTH-09: userId 에 <b>직접 부여(direct)</b>된 권한(전역 역할·메뉴·리소스)을 열거해 읽기 DTO 로 반환한다.
+     * BFF /api/auth/me 집계용. 클래스 레벨 쓰기 트랜잭션을 읽기 전용으로 오버라이드한다.
+     *
+     * <p>D-02 direct 해석 — {@code findByGroupId}(그룹 상속)·리소스 계층(재귀 CTE)은 호출하지 않는다.
+     */
+    @Transactional(readOnly = true)
+    public PermissionView findPermissions(long userId) {
+        // direct 해석 — findByGroupId 미사용(D-02)
+        List<String> roles = globalRoleGrantRepository.findByUserId(userId).stream()
+                .map(g -> g.getRole().name())
+                .toList();
+        List<PermissionView.MenuEntry> menus = menuGrantRepository.findByUserId(userId).stream()
+                .map(g -> new PermissionView.MenuEntry(g.getMenuId(), g.getRole().name()))
+                .toList();
+        List<PermissionView.ResourceEntry> resources = resourceGrantRepository.findByUserId(userId).stream()
+                .map(g -> new PermissionView.ResourceEntry(g.getResourceId(), g.getRole().name()))
+                .toList();
+        return new PermissionView(roles, menus, resources);
     }
 }

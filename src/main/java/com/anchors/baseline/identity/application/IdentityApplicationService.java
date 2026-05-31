@@ -51,4 +51,15 @@ public class IdentityApplicationService {
         user.disable();
         userRepository.save(user);
     }
+
+    /**
+     * AUTH-08: 로컬 PK(userId)로 신원(id/email/status)을 조회해 읽기 DTO 로 반환한다. BFF /api/auth/me 집계용.
+     * 클래스 레벨 쓰기 트랜잭션을 읽기 전용으로 오버라이드한다.
+     */
+    @Transactional(readOnly = true)
+    public UserView findUser(long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+        return new UserView(user.getId(), user.getEmail().getValue(), user.getStatus().name());
+    }
 }
