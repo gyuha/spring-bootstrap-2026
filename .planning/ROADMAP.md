@@ -91,7 +91,19 @@ Plans:
   3. 최초 로그인 시 Identity 컨텍스트의 `linkIdentity` 연산이 호출되어 INVITED→ACTIVE 전이가 발생한다
   4. 로그아웃 요청 시 Redis 서버 세션이 무효화되고 이후 동일 세션 쿠키로의 요청은 인증 실패한다
 
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+**Wave 1**
+
+- [ ] 03-01-PLAN.md — 의존성 토대 + findByEmail 포트 보강 (oauth2-client·session-data-redis·security-test·WireMock, UserRepository.findByEmail)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 03-02-PLAN.md — auth 컨텍스트 구현 (SecurityFilterChain, BaselineOidcUserService, IdentityLinkService 브리지, BaselineOidcUser, /api/me, OIDC application.yml)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 03-03-PLAN.md — SC#1~4 행위 단언 통합 테스트 (WireMock OIDC 스텁, BffAuthIT, 직렬화 라운드트립 가드)
 
 ### Phase 4: Authorization 컨텍스트
 
@@ -117,5 +129,5 @@ Phase 1 → Phase 2 → Phase 3 → Phase 4
 |-------|------------|------|--------|
 | 1. 플랫폼 골격 | 0/5 | Planning complete | - |
 | 2. Identity 컨텍스트 | 0/3 | Planning complete | - |
-| 3. BFF 인증 | 0/TBD | Not started | - |
+| 3. BFF 인증 | 0/3 | Planning complete | - |
 | 4. Authorization 컨텍스트 | 0/TBD | Not started | - |
