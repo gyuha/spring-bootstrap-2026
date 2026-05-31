@@ -12,6 +12,7 @@ import org.springframework.security.oauth2.client.web.HttpSessionOAuth2Authorize
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.authentication.logout.LogoutFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfToken;
@@ -21,6 +22,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,13 +53,15 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health", "/login/**", "/oauth2/**",
-                                "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                                "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
+                                "/api/auth/session", "/api/auth/login").permitAll()
                         .anyRequest().authenticated())
                 .logout(logout -> logout
-                        .logoutUrl("/logout")
+                        .logoutUrl("/api/auth/logout")
                         .invalidateHttpSession(true)
                         .clearAuthentication(true)
-                        .deleteCookies("SESSION"))
+                        .deleteCookies("SESSION")
+                        .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)))
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         // SPA 는 쿠키의 raw 토큰을 X-XSRF-TOKEN 헤더로 그대로 회신한다 → plain handler 사용
@@ -75,7 +79,17 @@ public class SecurityConfig {
         // oauth2Login 은 ClientRegistrationRepository 빈이 있을 때만 적용(main 프로파일 부팅 보전).
         if (clientRegistrationRepository.getIfAvailable() != null) {
             http.oauth2Login(oauth -> oauth
-                    .userInfoEndpoint(ui -> ui.oidcUserService(baselineOidcUserService)));
+                    .userInfoEndpoint(ui -> ui.oidcUserService(baselineOidcUserService))
+                    .successHandler((request, response, authentication) -> {
+                        // BFF 로그인 진입 래퍼(/api/auth/login)가 세션에 저장한 RETURN_TO 복귀 경로를 복원한다.
+                        // open-redirect 방지는 진입 시점(AuthController.login)에서 검증되므로 여기선 저장값을 신뢰한다.
+                        HttpSession session = request.getSession(false);
+                        String returnTo = (session != null) ? (String) session.getAttribute("RETURN_TO") : null;
+                        if (session != null) {
+                            session.removeAttribute("RETURN_TO");
+                        }
+                        response.sendRedirect(returnTo != null ? returnTo : "/");
+                    }));
         } else {
             // 사일런트 미설정 방지(fail-loud): registration 부재 시 OIDC 로그인 경로가 비활성화되어
             // 모든 보호 요청이 401 로 잠긴다. 운영에서 OIDC 가 필요하면 시작 로그로 즉시 인지하도록 경고한다.
