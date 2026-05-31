@@ -36,16 +36,14 @@ v1.0은 식별/인증/인가 컨텍스트를 도메인·application·영속까�
 
 ## Traceability
 
-<!-- 로드맵 단계에서 채워짐 -->
-
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| AUTH-06 | — | Not started |
-| AUTH-07 | — | Not started |
-| AUTH-08 | — | Not started |
-| AUTH-09 | — | Not started |
-| AUTH-10 | — | Not started |
-| AUTH-11 | — | Not started |
+| AUTH-06 | Phase 5 | Not started |
+| AUTH-07 | Phase 5 | Not started |
+| AUTH-10 | Phase 5 | Not started |
+| AUTH-08 | Phase 6 | Not started |
+| AUTH-09 | Phase 6 | Not started |
+| AUTH-11 | Phase 6 | Not started |
 
 ---
 *작성: 2026-05-31 — v1.1 인증 웹 인터페이스 마일스톤*
