@@ -8,6 +8,18 @@
 
 새 백엔드를 시작할 때마다 스택·아키텍처·인증/인가를 다시 결정하지 않도록, 검증된 DDD 골격과 식별/인증/인가 기반을 그대로 가져다 쓸 수 있게 한다.
 
+## Current Milestone: v1.1 인증 웹 인터페이스
+
+**Goal:** BFF SPA가 소비할 인증 웹 인터페이스(REST)를 auth 컨텍스트에 제공한다 — 세션 상태 조회, 로그아웃, 내 정보(신원+권한 집계), 로그인 진입.
+
+**Target features:**
+- `GET /api/auth/session` — 인증 상태 조회. 비인증 시 401이 아니라 200 + `{authenticated:false}` (SPA가 401 노이즈 없이 로그인 여부 확인)
+- `POST /api/auth/logout` — BFF 로그아웃. 프레임워크 기본 302 redirect 대신 JSON 204/200 응답
+- `GET /api/auth/me` — 내 정보. Identity(userId/email/status) + Authorization(역할/메뉴/리소스 권한 전체)을 집계
+- `GET /api/auth/login` — OIDC authorization 엔드포인트로의 BFF 진입 래퍼
+
+**Key context:** auth/interfaces 계층이 Identity + Authorization 두 컨텍스트의 application 서비스를 집계(BFF 패턴). ArchUnit 계층 의존 규칙(interfaces → 타 컨텍스트 application 허용 여부) 조정이 필요할 수 있음. 인증 신원 노출과 인가 권한 노출을 한 응답에 결합하는 결정은 의도적(SPA 라우팅/메뉴 가드 편의 우선).
+
 ## Requirements
 
 ### Validated
@@ -28,7 +40,7 @@
 
 <!-- Current scope. Building toward these. -->
 
-(다음 마일스톤에서 정의 — `/gsd-new-milestone`)
+- 인증 웹 인터페이스 — `/api/auth/session`(상태 조회), `/api/auth/logout`(JSON 204), `/api/auth/me`(신원+권한 집계), `/api/auth/login`(OIDC 진입) — v1.1 (요구사항은 `/gsd-new-milestone` 단계에서 REQ-ID로 확정)
 
 ### Out of Scope
 
@@ -86,4 +98,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-31 after v1.0 milestone*
+*Last updated: 2026-05-31 — v1.1 인증 웹 인터페이스 마일스톤 시작*

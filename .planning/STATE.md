@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: "Phase 4 plans ready (plan-checker PASSED). Phase 1+2+3 shipped — PR #2."
-last_updated: "2026-05-31T12:26:14.611Z"
+milestone: v1.1
+milestone_name: 인증 웹 인터페이스
+status: planning
+last_updated: "2026-05-31T12:43:09.822Z"
 last_activity: 2026-05-31
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 14
-  completed_plans: 14
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # 프로젝트 상태
@@ -95,10 +95,10 @@ v1.0 마일스톤 종료 시 인수된 항목:
 
 ## Current Position
 
-Phase: Milestone v1.0 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-05-31 — Milestone v1.0 completed and archived
+Status: Defining requirements
+Last activity: 2026-05-31 — Milestone v1.1 started
 
 ## Operator Next Steps
 
