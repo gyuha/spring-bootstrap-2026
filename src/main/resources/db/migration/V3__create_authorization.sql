@@ -2,8 +2,6 @@
 -- soft reference: no physical FK (§4.1 / D-07) — user_id/group_id/resource_id/menu_id 는 다른
 --   컨텍스트(identity 등)로의 논리 참조이며 물리 외래키 제약을 걸지 않는다(컨텍스트 독립).
 -- created_at: 단일 소스 — 엔티티가 Instant.now() 로 소유한다(D-09). DDL 기본값 절은 생략한다.
--- 런타임 요구: PostgreSQL 14+ — 재귀 CTE 사이클 가드(CYCLE ... SET ... USING path, AuthorizationMapper.xml)는
---   PG14 미만에서 문법 에러로 하드 실패한다. 운영 DB 도 PG14+ 를 보장해야 한다.
 
 -- AUTHZ-01: 전역 역할 부여/회수 — userId 에 전역 역할 부여
 CREATE TABLE IF NOT EXISTS global_role_grants (
@@ -28,10 +26,6 @@ CREATE TABLE IF NOT EXISTS menu_grants (
 );
 CREATE INDEX IF NOT EXISTS idx_menu_grants_user_id ON menu_grants (user_id);
 CREATE INDEX IF NOT EXISTS idx_menu_grants_group_id ON menu_grants (group_id);
--- 멱등 부여: 동일 (주체, menu_id, role) 중복 행 차단. polymorphic(user XOR group) 이라 NULL 컬럼이
---   기본 UNIQUE 의 NULL-distinct 규칙을 우회하므로, 주체별 부분 UNIQUE 인덱스로 분리한다(PG12+).
-CREATE UNIQUE INDEX IF NOT EXISTS uq_menu_grants_user ON menu_grants (user_id, menu_id, role) WHERE user_id IS NOT NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uq_menu_grants_group ON menu_grants (group_id, menu_id, role) WHERE group_id IS NOT NULL;
 COMMENT ON TABLE menu_grants IS 'AUTHZ-02 메뉴 권한 — 주체 user XOR group polymorphic, soft ref';
 
 -- AUTHZ-03/06: 사용자/그룹 리소스 권한 — 주체(user XOR group) polymorphic 단일 테이블
@@ -47,9 +41,6 @@ CREATE TABLE IF NOT EXISTS resource_grants (
 CREATE INDEX IF NOT EXISTS idx_resource_grants_user_id ON resource_grants (user_id);
 CREATE INDEX IF NOT EXISTS idx_resource_grants_group_id ON resource_grants (group_id);
 CREATE INDEX IF NOT EXISTS idx_resource_grants_resource_id ON resource_grants (resource_id);
--- 멱등 부여: 동일 (주체, resource_id, role) 중복 행 차단. menu_grants 와 동일 사유로 부분 UNIQUE 인덱스 분리(PG12+).
-CREATE UNIQUE INDEX IF NOT EXISTS uq_resource_grants_user ON resource_grants (user_id, resource_id, role) WHERE user_id IS NOT NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uq_resource_grants_group ON resource_grants (group_id, resource_id, role) WHERE group_id IS NOT NULL;
 COMMENT ON TABLE resource_grants IS 'AUTHZ-03/06 리소스 권한 — 주체 user XOR group polymorphic, soft ref';
 
 -- AUTHZ-04: 그룹
