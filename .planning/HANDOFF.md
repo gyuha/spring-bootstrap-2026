@@ -17,3 +17,4 @@
 | 2026-05-31T02:19:46Z | 02-identity-context | review | sg-next | - | gyuha |
 | 2026-05-31T02:35:30Z | 02-identity-context | review | sg-retro | - | gyuha |
 | 2026-05-31T02:35:30Z | 02-identity-context | sg-retro | sg-next | - | gyuha |
+| 2026-05-31T02:43:04Z | 02-identity-context | sg-next | ship | - | gyuha |
