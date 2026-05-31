@@ -170,18 +170,22 @@ class BffAuthSessionIT extends AbstractIntegrationTest {
 
     @Test
     void loginRejectsAbsoluteReturnTo() {
-        // 절대 URL·프로토콜-상대 URL 은 무시되고 evil.com 으로 리다이렉트되지 않는다(open-redirect 방지).
-        ResponseEntity<Void> abs = rest.exchange(
-                baseUrl() + "/api/auth/login?returnTo=https://evil.com",
-                HttpMethod.GET, HttpEntity.EMPTY, Void.class);
-        assertThat(abs.getHeaders().getLocation()).isNotNull();
-        assertThat(abs.getHeaders().getLocation().toString()).doesNotContain("evil.com");
-
-        ResponseEntity<Void> protocolRelative = rest.exchange(
-                baseUrl() + "/api/auth/login?returnTo=//evil.com",
-                HttpMethod.GET, HttpEntity.EMPTY, Void.class);
-        assertThat(protocolRelative.getHeaders().getLocation()).isNotNull();
-        assertThat(protocolRelative.getHeaders().getLocation().toString()).doesNotContain("evil.com");
+        // 절대 URL·프로토콜-상대 URL·역슬래시 우회는 모두 무시되고 evil.com 으로 리다이렉트되지 않는다.
+        // 역슬래시(/\evil.com)는 브라우저가 //evil.com 으로 정규화하는 open-redirect 우회라 반드시 거부돼야 한다.
+        for (String hostile : List.of(
+                "https://evil.com",
+                "//evil.com",
+                "/\\evil.com",
+                "/%5Cevil.com")) {
+            ResponseEntity<Void> resp = rest.exchange(
+                    baseUrl() + "/api/auth/login?returnTo=" + hostile,
+                    HttpMethod.GET, HttpEntity.EMPTY, Void.class);
+            assertThat(resp.getHeaders().getLocation())
+                    .as("returnTo=%s 는 302 를 내야 함", hostile).isNotNull();
+            assertThat(resp.getHeaders().getLocation().toString())
+                    .as("returnTo=%s 가 evil.com 으로 리다이렉트되면 안 됨", hostile)
+                    .doesNotContain("evil.com");
+        }
     }
 
     // ===================== WireMock authorization-code 흐름 헬퍼 (BffAuthIT 계승) =====================

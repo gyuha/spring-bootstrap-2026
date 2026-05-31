@@ -82,13 +82,19 @@ public class SecurityConfig {
                     .userInfoEndpoint(ui -> ui.oidcUserService(baselineOidcUserService))
                     .successHandler((request, response, authentication) -> {
                         // BFF 로그인 진입 래퍼(/api/auth/login)가 세션에 저장한 RETURN_TO 복귀 경로를 복원한다.
-                        // open-redirect 방지는 진입 시점(AuthController.login)에서 검증되므로 여기선 저장값을 신뢰한다.
+                        // 진입 시점(AuthController.login)에서 검증되지만, 세션 attribute 는 신뢰 경계 밖이므로
+                        // 여기서도 상대경로(역슬래시·프로토콜-상대·스킴 제외)를 재검증한다(defense-in-depth).
                         HttpSession session = request.getSession(false);
                         String returnTo = (session != null) ? (String) session.getAttribute("RETURN_TO") : null;
                         if (session != null) {
                             session.removeAttribute("RETURN_TO");
                         }
-                        response.sendRedirect(returnTo != null ? returnTo : "/");
+                        boolean safe = returnTo != null
+                                && returnTo.startsWith("/")
+                                && !returnTo.startsWith("//")
+                                && !returnTo.contains("\\")
+                                && !returnTo.contains("://");
+                        response.sendRedirect(safe ? returnTo : "/");
                     }));
         } else {
             // 사일런트 미설정 방지(fail-loud): registration 부재 시 OIDC 로그인 경로가 비활성화되어
