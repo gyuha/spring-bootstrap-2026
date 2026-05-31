@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
@@ -31,8 +32,16 @@ public class AuthController {
      */
     private final ObjectProvider<ClientRegistrationRepository> clientRegistrationRepository;
 
-    public AuthController(ObjectProvider<ClientRegistrationRepository> clientRegistrationRepository) {
+    /**
+     * 로그인 진입 시 사용할 OIDC registration id. 베이스라인은 단일 registration 을 전제하되, 복제 프로젝트가
+     * 자신의 registration 명을 쓸 수 있도록 외부화한다(미설정 시 test/예제 기본값 {@code test-idp}).
+     */
+    private final String oidcRegistrationId;
+
+    public AuthController(ObjectProvider<ClientRegistrationRepository> clientRegistrationRepository,
+                          @Value("${app.auth.oidc-registration-id:test-idp}") String oidcRegistrationId) {
         this.clientRegistrationRepository = clientRegistrationRepository;
+        this.oidcRegistrationId = oidcRegistrationId;
     }
 
     /**
@@ -58,21 +67,28 @@ public class AuthController {
     public void login(@RequestParam(required = false) String returnTo,
                       HttpSession session,
                       HttpServletResponse response) throws IOException {
-        if (isSafeRelativePath(returnTo)) {
-            session.setAttribute("RETURN_TO", returnTo);
-        }
+        // registration 부재(503) 가드를 RETURN_TO 저장보다 먼저 — 503 으로 끝날 때 stale attribute 가
+        // 세션에 남아 다른 탭의 정상 로그인 successHandler 를 오염시키는 것을 막는다.
         if (clientRegistrationRepository.getIfAvailable() == null) {
             response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "OIDC registration not configured");
             return;
         }
-        response.sendRedirect("/oauth2/authorization/test-idp");
+        if (isSafeRelativePath(returnTo)) {
+            session.setAttribute("RETURN_TO", returnTo);
+        }
+        response.sendRedirect("/oauth2/authorization/" + oidcRegistrationId);
     }
 
-    /** open-redirect 방지: 절대 URL·프로토콜-상대 URL(//host)·스킴 포함 URL 을 모두 거부하고 상대경로만 허용한다. */
+    /**
+     * open-redirect 방지: 절대 URL·프로토콜-상대 URL(//host)·스킴 포함 URL·역슬래시 포함 URL 을 모두 거부하고
+     * 상대경로만 허용한다. 역슬래시 거부는 {@code /\evil.com} 같은 입력을 브라우저가 {@code //evil.com} 으로
+     * 정규화(WHATWG URL)해 외부 리다이렉트되는 우회를 차단한다.
+     */
     private static boolean isSafeRelativePath(String url) {
         return url != null
                 && url.startsWith("/")
                 && !url.startsWith("//")
+                && !url.contains("\\")
                 && !url.contains("://");
     }
 
