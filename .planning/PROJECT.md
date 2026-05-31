@@ -14,21 +14,21 @@
 
 <!-- Shipped and confirmed valuable. -->
 
-(None yet — ship to validate)
+- ✓ Java 21 + Spring Boot MVC 기반 프로젝트 골격 (가상 스레드 활성화) — v1.0
+- ✓ 헥사고날 + DDD 패키지 구조 (context × {domain, application, infrastructure, interfaces}) — v1.0 (ArchUnit 게이트로 강제)
+- ✓ JPA(쓰기/기본 조회) + MyBatis(복잡 조회) 동일 DataSource 단일 트랜잭션 결합 — v1.0
+- ✓ PostgreSQL + Flyway 스키마 버전 관리 (V1~V4) — v1.0
+- ✓ Redis 세션 저장소 — v1.0
+- ✓ Identity 컨텍스트 — User 애그리거트(invite/linkIdentity/disable), Email/ExternalId/UserStatus VO, 도메인 이벤트 — v1.0
+- ✓ BFF 인증 — Spring Security OIDC, Redis 세션(토큰 브라우저 비노출), 최초 로그인 시 신원 연결, 불변 식별자 매칭(A-6) — v1.0
+- ✓ Authorization 컨텍스트 — 3계층 권한(전역 역할/메뉴/리소스), 그룹, 재귀 CTE 계층 상속, PermissionEvaluator 도메인 서비스 — v1.0
+- ✓ 인가 포트/어댑터(A-5) — 앱 내부 구현(Postgres + 재귀 CTE), ListObjects는 MyBatis 읽기 모델, 교체 가능 — v1.0
 
 ### Active
 
 <!-- Current scope. Building toward these. -->
 
-- [ ] Java 21 + Spring Boot MVC 기반 프로젝트 골격 (가상 스레드 활성화)
-- [ ] 헥사고날 + DDD 패키지 구조 (context × {domain, application, infrastructure, interfaces})
-- [ ] JPA(쓰기/기본 조회) + MyBatis(복잡 조회) 동일 DataSource 단일 트랜잭션 결합
-- [ ] PostgreSQL + Flyway 스키마 버전 관리
-- [ ] Redis 세션 저장소
-- [ ] Identity 컨텍스트 — User 애그리거트(invite/linkIdentity/disable), Email/ExternalId/UserStatus VO, 도메인 이벤트
-- [ ] BFF 인증 — Spring Security OIDC, Redis 세션, 최초 로그인 시 신원 연결, 불변 식별자 매칭(A-6)
-- [ ] Authorization 컨텍스트 — 3계층 권한(전역 역할/메뉴/리소스), 그룹, 계층 상속, PermissionEvaluator 도메인 서비스
-- [ ] 인가 포트/어댑터(A-5) — 앱 내부 구현(Postgres + 재귀 CTE) 우선, ListObjects는 MyBatis 읽기 모델
+(다음 마일스톤에서 정의 — `/gsd-new-milestone`)
 
 ### Out of Scope
 
@@ -45,6 +45,8 @@
 - 베이스라인 명세 원문: `spring-backend-ddd-baseline.md` (문서 버전 v1.0). 스택·아키텍처 결정(A-1~A-7)·DDD 빌딩 블록·기능별 적용 패턴·NFR이 모두 여기에 고정되어 있다.
 - 직전 프로젝트(인증 중심: register/login/refresh/logout/social, /me)는 삭제됨. 이 골격은 그 학습을 반영해 DDD 구조 위에서 다시 세운다.
 - 배포 환경 비종속(온프레미스/클라우드 무관). 외부 의존 최소화.
+- **v1.0 shipped 상태:** 4 컨텍스트(platform/identity/auth/authorization) 구현 완료. 전체 51 tests GREEN(실 Postgres Testcontainers). 코드 PR #2(Phase 1+2+3+4). 검증 인프라 = Testcontainers(postgres:16/redis:7) + WireMock(OIDC). 로컬 라이브 실행은 8080/5432/6379가 타 프로젝트와 충돌 시 차단될 수 있음.
+- **인가 HTTP API 미포함(의도):** authorization은 도메인/판정/영속 + 프로그래밍 API(AuthorizationApplicationService/PermissionEvaluator/AuthorizationPort)만 제공. REST 노출은 복제 업무 프로젝트가 채울 영역.
 
 ## Constraints
 
@@ -60,10 +62,11 @@
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| greenfield `gsd-new-project`로 초기화 (`sg-new`/new-milestone 아님) | PROJECT/ROADMAP/STATE 부재 — milestone 워크플로우는 기존 프로젝트 전제라 깨짐 | — Pending |
-| scope = 골격 + Identity/Authorization/BFF 인증 | 문서가 A-3·A-4·A-6 인증을 "거의 항상 재사용"이라 명시, 직전 프로젝트도 인증 중심 | — Pending |
-| 인가 구현 = 앱 내부(Postgres 재귀 CTE) 먼저, 포트로 외부 엔진 교체 가능 | A-5/A-7 — 서버 추가 없이 시작, 복잡도 한계 시 외부 엔진 재검토 | — Pending |
-| JPA 방식 A(엔티티=애그리거트) 기본 채택 | 사내 업무 시스템엔 충분, 매핑 보일러플레이트 절감 (4.4) | — Pending |
+| greenfield `gsd-new-project`로 초기화 (`sg-new`/new-milestone 아님) | PROJECT/ROADMAP/STATE 부재 — milestone 워크플로우는 기존 프로젝트 전제라 깨짐 | ✓ Good — 4 phase 무사 완주 |
+| scope = 골격 + Identity/Authorization/BFF 인증 | 문서가 A-3·A-4·A-6 인증을 "거의 항상 재사용"이라 명시, 직전 프로젝트도 인증 중심 | ✓ Good — v1.0 전부 shipped |
+| 인가 구현 = 앱 내부(Postgres 재귀 CTE) 먼저, 포트로 외부 엔진 교체 가능 | A-5/A-7 — 서버 추가 없이 시작, 복잡도 한계 시 외부 엔진 재검토 | ✓ Good — AuthorizationPort 교체 가능 구조 실증(SC#5) |
+| JPA 방식 A(엔티티=애그리거트) 기본 채택 | 사내 업무 시스템엔 충분, 매핑 보일러플레이트 절감 (4.4) | ✓ Good — 4 컨텍스트 전부 방식 A로 구현 |
+| 적용된 Flyway 마이그레이션 불변 — 추가는 새 V 번호로 | V3 편집이 영속 dev DB checksum mismatch로 부팅 실패(Testcontainers가 가림) | ⚠️ Revisit — ArchUnit/게이트로 자동 차단 미흡, 다음 마일스톤 강화 후보 |
 
 ## Evolution
 
@@ -83,4 +86,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-30 after initialization*
+*Last updated: 2026-05-31 after v1.0 milestone*

@@ -38,3 +38,4 @@
 | 2026-05-31T11:59:35Z | 04-authorization | sg-retro | sg-next | - | gyuha |
 | 2026-05-31T12:00:13Z | 04-authorization | sg-retro | ship | - | gyuha |
 | 2026-05-31T12:18:49Z | 04-authorization | ship | sg-next | - | gyuha |
+| 2026-05-31T12:25:08Z | v1.0 | sg-next | complete | - | gyuha |
