@@ -1,9 +1,9 @@
 ---
 phase: 05
 slug: bff-auth-session
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: approved
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-05-31
 ---
 
@@ -42,7 +42,12 @@ created: 2026-05-31
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| (planner fills) | | | AUTH-06/07/10 | | | IT/unit | `./gradlew test` | ❌ W0 | ⬜ pending |
+| 05-01-T1 | 01 | 1 | AUTH-07 | logout CSRF | logoutUrl `/api/auth/logout` + 204 handler; BffAuthIT 의도적 RED(T2서 GREEN) | unit/arch | `./gradlew compileJava --rerun-tasks && ./gradlew test --tests "*ArchitectureTest*"` | ❌ W0 | ⬜ pending |
+| 05-01-T2 | 01 | 1 | AUTH-07 | logout CSRF | BffAuthIT.logout() 헬퍼 `/logout`→`/api/auth/logout` 회귀 수정 → GREEN | IT | `./gradlew test --tests "*BffAuthIT*" --tests "*ArchitectureTest*"` | ✅ | ⬜ pending |
+| 05-02-T1 | 02 | 2 | AUTH-06 | permitAll 노출 | GET /api/auth/session nullable principal, record DTO(Map.of 금지) | unit/compile | `./gradlew compileJava --rerun-tasks` | ✅ | ⬜ pending |
+| 05-02-T2 | 02 | 2 | AUTH-10 | open-redirect HIGH | GET /api/auth/login isSafeRelativePath() + ObjectProvider 가드; ArchUnit GREEN | arch | `./gradlew test --tests "*ArchitectureTest*"` | ✅ | ⬜ pending |
+| 05-03-T1 | 03 | 3 | AUTH-06 | permitAll 노출 | SC#1 session 200 분기 + SC#4 permitAll 매처(/api/me 401 불변) | IT | `./gradlew test --tests "*BffAuthSessionIT*"` | ✅ | ⬜ pending |
+| 05-03-T2 | 03 | 3 | AUTH-07, AUTH-10 | open-redirect, logout CSRF | SC#2 logout 204 + Redis 세션 read-back(null); SC#3 login 302 + returnTo open-redirect 거부 + 복귀 | IT | `./gradlew test --tests "*BffAuthSessionIT*" --tests "*BffAuthIT*" --tests "*ArchitectureTest*"` | ✅ | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -50,10 +55,10 @@ created: 2026-05-31
 
 ## Wave 0 Requirements
 
-- [ ] `BffAuthIT.logout()` 헬퍼의 `/logout` → `/api/auth/logout` 경로 갱신 (RESEARCH 발견 #5 — logoutUrl 변경 시 기존 테스트 회귀)
-- [ ] `AuthControllerIT` 신설 — AUTH-06/07/10 SC 단언 스텁
+- [x] `BffAuthIT.logout()` 헬퍼의 `/logout` → `/api/auth/logout` 경로 갱신 (05-01-T2 — logoutUrl 변경 시 기존 테스트 회귀 방지)
+- [x] `BffAuthSessionIT` 신설 — AUTH-06/07/10 SC#1~4 단언 (05-03, Wave 3)
 
-*기존 Testcontainers/WireMock 인프라(AbstractIntegrationTest, BffAuthIT 형판)가 신규 프레임워크 설치 불필요를 커버.*
+*기존 Testcontainers/WireMock 인프라(AbstractIntegrationTest, BffAuthIT 형판)가 신규 프레임워크 설치 불필요를 커버. 신규 테스트 클래스는 BffAuthSessionIT(05-03) — 명칭 정정(이전 초안 AuthControllerIT).*
 
 ---
 
@@ -74,6 +79,6 @@ created: 2026-05-31
 - [ ] Wave 0 covers all MISSING references
 - [ ] No watch-mode flags
 - [ ] Feedback latency < 120s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-05-31

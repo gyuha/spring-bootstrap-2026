@@ -36,14 +36,23 @@
 **Depends on**: Phase 4
 **Requirements**: AUTH-06, AUTH-07, AUTH-10
 **Success Criteria** (무엇이 TRUE여야 하는가):
+
   1. 비인증 상태에서 `GET /api/auth/session`을 호출하면 401 없이 `200 + {"authenticated": false}`가 반환되고, 인증 상태에서는 `200 + {"authenticated": true, "userId": ...}`가 반환된다
   2. 인증 상태에서 `POST /api/auth/logout`을 호출하면 302 redirect 없이 `204 No Content`가 반환되고, HttpSession 무효화·`SESSION` 쿠키 삭제·인증 클리어가 수행되어 이후 동일 세션 쿠키로의 보호 요청은 인증 실패한다
   3. `GET /api/auth/login`을 호출하면 OIDC authorization 진입점으로 리다이렉트되고 `returnTo` 쿼리 파라미터가 로그인 후 복귀 경로로 전달된다
   4. `/api/auth/session`과 `/api/auth/login`이 permitAll 매처로 비인증 접근 가능한 반면, 기존 보호 매처(`/api/**`)는 영향받지 않고 401 엔트리포인트를 유지한다
-**Plans**: 3 plans
-Plans:
+
+**Plans**: 3 plansPlans:
+**Wave 1**
+
 - [ ] 05-01-PLAN.md — SecurityConfig 외과적 수정(logoutUrl 재지정·204 핸들러·permitAll 추가·returnTo successHandler) + BffAuthIT logout 헬퍼 경로 갱신
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 05-02-PLAN.md — AuthController 신설(GET /api/auth/session, GET /api/auth/login + open-redirect 방지 + ObjectProvider 가드)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 05-03-PLAN.md — BffAuthSessionIT 신규(SC#1~4 전체 단언 — Testcontainers + WireMock + MockMvc)
 
 ### Phase 6: 내 정보 신원·권한 집계
@@ -52,9 +61,11 @@ Plans:
 **Depends on**: Phase 5
 **Requirements**: AUTH-08, AUTH-09, AUTH-11
 **Success Criteria** (무엇이 TRUE여야 하는가):
+
   1. 인증 상태에서 `GET /api/auth/me`를 호출하면 userId·email·status(Identity application에서 조회한 로컬 User 신원)가 반환되고, 비인증 시 401이 반환된다
   2. 동일 `GET /api/auth/me` 응답에 전역 역할·메뉴 권한·리소스 권한(Authorization application에서 조회한 권한 전체)이 단일 응답으로 함께 포함된다
   3. ArchUnit 계층 의존 테스트가 GREEN 상태를 유지하며, `auth/interfaces`가 Identity·Authorization application 서비스를 호출하는 교차 컨텍스트 의존이 명시적으로 허용된 규칙으로 통과한다
+
 **Plans**: TBD
 
 ## 진행 현황

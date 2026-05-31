@@ -454,17 +454,19 @@ http.oauth2Login(oauth -> oauth
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **`AuthController.login()`의 ArchUnit 통과 여부 — `ClientRegistrationRepository` 타입 위치**
    - 무엇을 아는가: `ClientRegistrationRepository`는 `spring-security-oauth2-client` 라이브러리 타입. `AuthController`는 `auth/interfaces` 패키지.
    - 불명확한 것: ArchUnit이 `spring-security-oauth2-client`를 infrastructure 계층으로 분류하지 않는다면(외부 라이브러리이므로 `..infrastructure..` 패턴 미매칭) `Interfaces`에서 직접 import 가능. 그러나 `ObjectProvider<ClientRegistrationRepository>` 방식은 Spring 타입만 사용하므로 안전.
    - 권장: `AuthController`에서 `ClientRegistrationRepository` 직접 사용 대신 `ObjectProvider`로 주입 — ArchUnit 계층 분류와 무관하게 안전. registration 존재 여부는 `getIfAvailable() != null` 체크.
+   - **RESOLVED:** `ObjectProvider<ClientRegistrationRepository>` 주입 방식으로 확정(05-02-PLAN.md Task 2). 외부 라이브러리 타입이므로 ArchUnit `..infrastructure..` 패턴에 미매칭 — `ObjectProvider` 래핑으로 계층 분류 무관하게 안전 통과.
 
 2. **`returnTo`를 세션에 저장하는 방식 vs `SavedRequest` 메커니즘 활용**
    - 무엇을 아는가: `SavedRequestAwareAuthenticationSuccessHandler.setTargetUrlParameter("returnTo")`는 **콜백 요청**(`/login/oauth2/code/...`)에서 파라미터를 읽는다. `/api/auth/login?returnTo=/foo`에서 `/oauth2/authorization/test-idp`로 리다이렉트할 때 파라미터가 소실된다.
    - 불명확한 것: `OAuth2AuthorizationRequestRedirectFilter`가 authorize 요청을 저장할 때 쿼리 파라미터를 세션에 포함하는지.
    - 권장: 세션 attribute 방식(A1 가정) 사용이 더 명확하고 제어 가능. planner가 `BaselineOidcUserService` 또는 기존 oauth2Login successHandler 확인 후 확정.
+   - **RESOLVED:** 세션 `attribute("RETURN_TO")` 저장 방식으로 확정(05-01-PLAN.md Task 1 oauth2Login successHandler 복원). `AuthController.login()`이 `session.setAttribute("RETURN_TO", returnTo)`로 저장하고, `SecurityConfig` oauth2Login successHandler가 콜백 완료 후 세션에서 꺼내 리다이렉트.
 
 ---
 
