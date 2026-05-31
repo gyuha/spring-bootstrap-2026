@@ -1,116 +1,86 @@
 spring:
   application:
-    name: spring-bootstrap
+    name: baseline
 
-  main:
-    # I18nConfig.localeContextResolver 빈이 WebFluxConfigurationSupport 기본 빈을 대체하기 위해 필요
-    allow-bean-definition-overriding: true
+  # PLAT-01: 가상 스레드 활성화 (Spring Boot 3.2+ Tomcat/MVC 자동 적용)
+  threads:
+    virtual:
+      enabled: true
 
-  # ── R2DBC (Reactive 런타임) ────────────────────────────────────────────────
-  r2dbc:
-    url: ${R2DBC_URL:r2dbc:postgresql://localhost:5432/bootstrap}
-    username: ${DB_USERNAME:bootstrap}
-    password: ${DB_PASSWORD:bootstrap}
-    pool:
-      initial-size: 5
-      max-size: 20
-      max-idle-time: 30m
-      validation-query: SELECT 1
-
-  # ── JDBC DataSource (Flyway + Spring Batch 공유) ──────────────────────────
   datasource:
-    url: ${JDBC_URL:jdbc:postgresql://localhost:5432/bootstrap}
-    username: ${DB_USERNAME:bootstrap}
-    password: ${DB_PASSWORD:bootstrap}
+    url: jdbc:postgresql://localhost:5432/baseline
+    username: baseline
+    password: baseline
     driver-class-name: org.postgresql.Driver
-    hikari:
-      maximum-pool-size: 5
-      minimum-idle: 2
-      connection-timeout: 30000
 
-  # ── Flyway (JDBC 기반 마이그레이션 — R2DBC·DataSource 와 완전히 분리) ──
-  # spring.flyway.url 이 명시되면 Spring Boot 자동 설정이 spring.datasource 와
-  # 무관하게 Flyway 전용 DataSource 를 내부에서 생성합니다.
-  # 운영 환경에서는 FLYWAY_* 환경변수로 마이그레이션 전용 DB 계정(DDL 권한)을
-  # 앱 런타임 계정(DML 권한, DB_USERNAME) 과 분리하여 최소 권한 원칙을 적용할 수 있습니다.
+  jpa:
+    hibernate:
+      # Flyway가 스키마를 관리하므로 create/update 금지 — 정합성만 검증
+      ddl-auto: validate
+    show-sql: false
+    open-in-view: false   # OSIV off — 계층 경계 유지 (View 렌더링 중 세션 열림 방지)
+    properties:
+      hibernate:
+        format_sql: false
+
   flyway:
-    enabled: true
-    url: ${FLYWAY_URL:${JDBC_URL:jdbc:postgresql://localhost:5432/bootstrap}}
-    user: ${FLYWAY_USER:${DB_USERNAME:bootstrap}}
-    password: ${FLYWAY_PASSWORD:${DB_PASSWORD:bootstrap}}
-    driver-class-name: org.postgresql.Driver
+    # flyway-database-postgresql이 클래스패스에 있어 별도 url 불필요
     locations: classpath:db/migration
-    baseline-on-migrate: false
+    baseline-on-migrate: false   # greenfield — 기존 DB 없음
     validate-on-migrate: true
-    clean-disabled: true      # 안전 — flyway clean 으로 DB 전체 삭제 방지
-    encoding: UTF-8
 
-  # ── Redis ─────────────────────────────────────────────────────────────────
   data:
     redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      timeout: 2000ms
-      lettuce:
-        pool:
-          max-active: 8
-          max-idle: 8
-          min-idle: 2
+      # Phase 1: 비밀번호 없음 (로컬 개발), Lettuce 클라이언트 기본 사용
+      host: localhost
+      port: 6379
 
-  # ── Spring AI ─────────────────────────────────────────────────────────────
-  ai:
-    openai:
-      api-key: ${OPENAI_API_KEY:placeholder-key}
-      chat:
-        options:
-          model: gpt-4o-mini
+  # Phase 3 (NFR-02): HTTP 세션을 Redis 에 영속화 → OAuth2AuthorizedClient(토큰)가
+  # HttpSession attribute 로 저장되어 Redis 서버 측에만 들어간다(쿠키엔 SESSION ID 만).
+  # 직렬화는 기본 JDK 유지(JSON 전환 시 OAuth2/OIDC 역직렬화 깨짐 — Pitfall 1).
+  # OIDC client registration/provider 는 main 에 두지 않는다(빈 placeholder 가 eager issuer
+  # discovery 를 유발해 부팅을 깨뜨림). test/배포 프로파일에서만 정의.
+  session:
+    store-type: redis
+    redis:
+      namespace: "spring:session:baseline"
 
-  # ── Spring Batch ──────────────────────────────────────────────────────────
-  batch:
-    job:
-      enabled: false  # 시작 시 자동 실행 비활성화
-    jdbc:
-      initialize-schema: never   # Flyway 마이그레이션(V1__init_schema.sql)이 배치 테이블 생성을 담당
+mybatis:
+  # XML 매퍼(재귀 CTE) 위치 — @Mapper 인터페이스 + 동명 XML namespace 바인딩
+  mapper-locations: classpath*:mybatis/*.xml
+  configuration:
+    # created_at → createdAt 등 snake_case 컬럼을 camelCase 프로퍼티로 자동 매핑
+    map-underscore-to-camel-case: true
 
-  # ── i18n ─────────────────────────────────────────────────────────────────
-  messages:
-    basename: i18n/messages
-    encoding: UTF-8
-    default-locale: ko
+springdoc:
+  # T-02 보안 주의: Swagger UI / api-docs는 dev 전용. 운영 배포 전 반드시
+  # springdoc.api-docs.enabled=false로 비활성화하거나 인증 뒤로 격리할 것
+  # (BFF/NFR-02 — 액세스 토큰 브라우저 비노출 원칙). Spring Security 도입(Phase 3/4) 후 인가 연동.
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
 
-# ── Server ───────────────────────────────────────────────────────────────────
-server:
-  port: ${SERVER_PORT:8080}
-
-# ── Actuator (기본값 — 프로파일별 override) ───────────────────────────────
 management:
   endpoints:
     web:
-      base-path: /actuator
       exposure:
-        include: health,info,prometheus
+        include: health,info
   endpoint:
     health:
+      # dev-only — 운영 배포 전 when_authorized로 변경 필요 (T-01 보안 주의)
       show-details: always
-      probes:
-        enabled: true
+      show-components: always
   health:
-    r2dbc:
+    db:
       enabled: true
     redis:
       enabled: true
     diskspace:
-      enabled: true
-  info:
-    env:
-      enabled: true
+      enabled: false   # Phase 1: 불필요
 
-# ── JWT ───────────────────────────────────────────────────────────────────
-jwt:
-  secret: ${JWT_SECRET:bootstrap-secret-key-change-in-production-must-be-32-chars}
-  access-token-expiry: 1800      # 30분 (초)
-  refresh-token-expiry: 1209600  # 14일 (초)
-
-# ── CORS (기본 로컬 허용 — 프로파일별 override) ───────────────────────────
-cors:
-  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
+logging:
+  level:
+    com.anchors.baseline: DEBUG
+    org.flywaydb: INFO
