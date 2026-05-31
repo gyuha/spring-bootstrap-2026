@@ -468,20 +468,16 @@ AUTH-11 요구사항 "명시적으로 허용된 규칙으로 통과"의 의도�
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **SC#2 "권한 전체" 해석 — direct only vs 그룹 상속 포함**
-   - 현황: D-02가 direct로 결정. 본 연구는 (A) direct 권장.
-   - 갭: SPA가 그룹으로 부여된 메뉴/리소스를 UI에서 표시해야 한다면 부족.
-   - 권고: planner/사용자가 SPA 요구사항을 확인 후 확정. 그룹 상속 포함이 필요하면 `GroupMemberRepository.findByUserId` + `MenuGrantRepository.findByGroupId` Java 레벨 합산으로 신규 CTE 없이 구현 가능(중간 복잡도).
+   - **RESOLVED:** direct 부여만 채택(D-02). findEffectiveGrants(userId, resourceId)는 resourceId 필수라 전체 열거 불가 — effective 열거는 신규 CTE(범위 초과). MeResponse 3버킷 구조는 향후 그룹/계층 상속 추가가 가능하도록 유지하고 한계를 코드 주석/SUMMARY에 명시.
 
 2. **미존재 User HTTP 매핑 — 404 vs 500**
-   - 현황: Claude's Discretion. `userRepository.findById` 결과 없을 경우 처리.
-   - 권고: 정상 경로는 항상 존재(Phase 3 신원 연결 전제). `orElseThrow(IllegalArgumentException)` → `@ControllerAdvice`에서 500 또는 명시적 404. planner가 확정.
+   - **RESOLVED:** 정상 경로는 항상 존재(Phase 3 신원 연결 전제). `userRepository.findById(userId).orElseThrow(IllegalArgumentException)` → Spring 기본 500. 방어적 처리로 충분(planner 06-01 확정).
 
 3. **BffAuthMeIT — 별도 클래스 vs BffAuthSessionIT 확장**
-   - 현황: Claude's Discretion.
-   - 권고: 별도 `BffAuthMeIT` 클래스 신설 권장. 테스트 책임 분리 + `BffAuthSessionIT`의 SC#2(logout) 흐름과 충돌 없음.
+   - **RESOLVED:** 별도 `BffAuthMeIT` 클래스 신설(planner 06-03 확정). 테스트 책임 분리 + BffAuthSessionIT SC#2 흐름과 무충돌.
 
 ---
 
