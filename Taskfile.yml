@@ -15,8 +15,25 @@ tasks:
     cmd: ./gradlew test
 
   migrate:
-    desc: Flyway 마이그레이션 실행
-    cmd: ./gradlew flywayMigrate
+    desc: Flyway 마이그레이션 적용 (Spring Boot Flyway starter — 앱 부팅 시 적용. 컨테이너 자동기동 후 부팅으로 트리거)
+    # 이 스택은 Flyway gradle 플러그인이 아니라 spring-boot-starter-flyway를 쓰므로
+    # 마이그레이션은 애플리케이션 부팅 시점에 적용된다. 부팅→health UP 확인→종료로 적용을 트리거한다.
+    cmd: |
+      set -e
+      ./gradlew bootRun --args='--spring.profiles.active=local' > /tmp/bootstrap-migrate.log 2>&1 &
+      BOOT_PID=$!
+      trap 'kill $BOOT_PID 2>/dev/null || true' EXIT
+      for i in $(seq 1 60); do
+        if curl -fsS http://localhost:8080/actuator/health 2>/dev/null | grep -q '"status":"UP"'; then
+          echo "[migrate] Flyway 적용 완료 (앱 부팅 성공)"
+          grep -iE 'Successfully applied|Migrating schema|up to date|No migration necessary' /tmp/bootstrap-migrate.log | tail -3
+          exit 0
+        fi
+        sleep 1
+      done
+      echo "[migrate] FAIL: 60초 내 부팅 미완료" >&2
+      tail -40 /tmp/bootstrap-migrate.log >&2
+      exit 1
 
   ci:
     desc: 로컬 CI (빌드 + 테스트 + 영속 DB 라이브 부팅 검증)
