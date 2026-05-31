@@ -89,5 +89,5 @@ Progress: [███████▌░░] 75%
 ## 세션 연속성
 
 마지막 세션: 2026-05-31
-종료 시점: Phase 3 (BFF 인증) context gathered — 플래닝 준비 완료
-재개 파일: .planning/phases/03-bff-auth/03-CONTEXT.md
+종료 시점: Phase 4 (Authorization 컨텍스트) context gathered — 플래닝 준비 완료
+재개 파일: .planning/phases/04-new-phase/04-CONTEXT.md
