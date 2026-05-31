@@ -7,7 +7,8 @@ tasks:
 
   run:
     desc: 애플리케이션 실행 (compose.yaml 컨테이너 자동기동, UTC + 핀닝 추적)
-    cmd: ./gradlew bootRun --args='--spring.profiles.active=local' -Duser.timezone=UTC -Djdk.tracePinnedThreads=full
+    # UTC/tracePinnedThreads JVM 옵션은 build.gradle.kts의 bootRun.jvmArgs로 app JVM에 주입된다.
+    cmd: ./gradlew bootRun --args='--spring.profiles.active=local'
 
   test:
     desc: 전체 테스트 실행
@@ -25,8 +26,7 @@ tasks:
       - cmd: |
           set -e
           echo "[ci] 영속 DB 라이브 부팅 검증 시작 (Flyway checksum mismatch 검출)..."
-          ./gradlew bootRun --args='--spring.profiles.active=local' \
-            -Duser.timezone=UTC -Djdk.tracePinnedThreads=full > /tmp/bootstrap-ci-boot.log 2>&1 &
+          ./gradlew bootRun --args='--spring.profiles.active=local' > /tmp/bootstrap-ci-boot.log 2>&1 &
           BOOT_PID=$!
           trap 'kill $BOOT_PID 2>/dev/null || true' EXIT
           UP=0

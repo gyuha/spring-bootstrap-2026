@@ -69,3 +69,9 @@ dependencies {
 tasks.withType<Test> {
     useJUnitPlatform()
 }
+
+// bootRun은 애플리케이션을 별도 JVM으로 fork하므로, ./gradlew에 넘긴 -D 시스템 프로퍼티는
+// app JVM에 도달하지 않는다. FOUND-06(가상 스레드 핀닝 실측)과 UTC 고정을 위해 jvmArgs로 명시 주입한다.
+tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
+    jvmArgs("-Duser.timezone=UTC", "-Djdk.tracePinnedThreads=full")
+}
