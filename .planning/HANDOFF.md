@@ -18,3 +18,12 @@
 | 2026-05-31T02:35:30Z | 02-identity-context | review | sg-retro | - | gyuha |
 | 2026-05-31T02:35:30Z | 02-identity-context | sg-retro | sg-next | - | gyuha |
 | 2026-05-31T02:43:04Z | 02-identity-context | sg-next | ship | - | gyuha |
+| 2026-05-31T02:44:25Z | 02-identity-context | ship | sg-next | - | gyuha |
+| 2026-05-31T02:51:18Z | 03-bff-auth | sg-next | gsd-plan | - | gyuha |
+| 2026-05-31T03:20:46Z | 03-bff-auth | gsd-plan | sg-next | - | gyuha |
+| 2026-05-31T03:21:13Z | 03-bff-auth | sg-next | parallel | c99a755 | gyuha |
+| 2026-05-31T07:31:46Z | 03-bff-auth | parallel | sg-next | - | gyuha |
+| 2026-05-31T07:32:27Z | 03-bff-auth | sg-next | review | - | gyuha |
+| 2026-05-31T08:08:09Z | 03-bff-auth | review | sg-retro | - | gyuha |
+| 2026-05-31T08:12:10Z | 03-bff-auth | sg-retro | sg-next | - | gyuha |
+| 2026-05-31T08:14:49Z | 03-bff-auth | sg-next | ship | - | gyuha |
