@@ -8,3 +8,12 @@
 | 2026-05-30T13:14:28Z | 01-platform-skeleton | review | sg-retro | - | gyuha |
 | 2026-05-30T13:14:28Z | 01-platform-skeleton | sg-retro | sg-next | - | gyuha |
 | 2026-05-30T13:14:44Z | 01-platform-skeleton | sg-next | ship | - | gyuha |
+| 2026-05-30T15:01:07Z | 01-platform-skeleton | ship | sg-next | - | gyuha |
+| 2026-05-30T15:06:55Z | 02-identity-context | sg-next | gsd-plan | - | gyuha |
+| 2026-05-30T15:33:33Z | 02-identity-context | gsd-plan | sg-next | - | gyuha |
+| 2026-05-30T15:34:14Z | 02-identity-context | sg-next | parallel | 46d8e46 | gyuha |
+| 2026-05-31T00:51:27Z | 02-identity-context | parallel | sg-next | - | gyuha |
+| 2026-05-31T00:52:19Z | 02-identity-context | sg-next | review | - | gyuha |
+| 2026-05-31T02:19:46Z | 02-identity-context | review | sg-next | - | gyuha |
+| 2026-05-31T02:35:30Z | 02-identity-context | review | sg-retro | - | gyuha |
+| 2026-05-31T02:35:30Z | 02-identity-context | sg-retro | sg-next | - | gyuha |
