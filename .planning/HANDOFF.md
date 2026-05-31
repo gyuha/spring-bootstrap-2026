@@ -39,3 +39,11 @@
 | 2026-05-31T12:00:13Z | 04-authorization | sg-retro | ship | - | gyuha |
 | 2026-05-31T12:18:49Z | 04-authorization | ship | sg-next | - | gyuha |
 | 2026-05-31T12:25:08Z | v1.0 | sg-next | complete | - | gyuha |
+| 2026-05-31T12:54:31Z | 5 | complete | sg-next | - | gyuha |
+| 2026-05-31T13:02:16Z | 05-bff-auth-session | sg-next | gsd-plan | - | gyuha |
+| 2026-05-31T13:31:37Z | 05-bff-auth-session | gsd-plan | sg-next | - | gyuha |
+| 2026-05-31T13:32:33Z | 05-bff-auth-session | sg-next | superpowers | 15e53c3 | gyuha |
+| 2026-05-31T13:40:44Z | 05-bff-auth-session | superpowers | sg-next | - | gyuha |
+| 2026-05-31T13:41:19Z | 05-bff-auth-session | sg-next | review | - | gyuha |
+| 2026-05-31T13:46:41Z | 05-bff-auth-session | review | sg-next | - | gyuha |
+| 2026-05-31T13:48:40Z | 05-bff-auth-session | sg-next | sg-retro | - | gyuha |
