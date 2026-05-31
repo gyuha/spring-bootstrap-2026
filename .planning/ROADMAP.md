@@ -118,7 +118,19 @@ Plans:
   4. INVITED 상태 사용자에게 부여한 권한이 DB에 저장되고, ACTIVE 전이 후 해당 권한이 `evaluate()` 결과에 반영된다
   5. `AuthorizationPort` 인터페이스가 존재하고 Postgres 내부 어댑터로 구현되어 교체 가능한 구조다
 
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+**Wave 1**
+
+- [ ] 04-01-PLAN.md — 도메인 계층 + 계약 + Flyway V3 (애그리거트 6종·VO·쓰기 포트, PermissionEvaluator(application)·PermissionReadPort·AuthorizationPort·DTO, V3 권한 스키마)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 04-02-PLAN.md — 인프라 어댑터 + grant/revoke 서비스 (JPA 어댑터 6종, AuthorizationMapper 재귀 CTE @Mapper+XML, PostgresAuthorizationAdapter, AuthorizationApplicationService)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 04-03-PLAN.md — Wave 0 테스트 + 전체 GREEN (PermissionEvaluatorTest 단위, SC#1~5 + 사이클 가드 통합테스트 5종, ArchitectureTest GREEN)
 
 ## 진행 현황
 
@@ -130,4 +142,4 @@ Phase 1 → Phase 2 → Phase 3 → Phase 4
 | 1. 플랫폼 골격 | 0/5 | Planning complete | - |
 | 2. Identity 컨텍스트 | 0/3 | Planning complete | - |
 | 3. BFF 인증 | 0/3 | Planning complete | - |
-| 4. Authorization 컨텍스트 | 0/TBD | Not started | - |
+| 4. Authorization 컨텍스트 | 0/3 | Planning complete | - |
