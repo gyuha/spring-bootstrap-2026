@@ -58,6 +58,13 @@ class BffAuthMeIT extends AbstractIntegrationTest {
         mvc.perform(get("/api/auth/me")).andExpect(status().isUnauthorized());
     }
 
+    @Test
+    void meWithoutUserIdClaimReturns401() throws Exception {
+        // 인증은 통과했으나 principal 에 user_id attribute 가 없으면 500(NPE)이 아니라 401 로 안전 실패해야 한다.
+        mvc.perform(get("/api/auth/me").with(oidcLogin()))
+                .andExpect(status().isUnauthorized());
+    }
+
     // ===================== SC#3: permitAll 매처 회귀 (me는 보호, session은 공개) =====================
 
     @Test
