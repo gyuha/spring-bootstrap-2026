@@ -47,3 +47,5 @@
 | 2026-05-31T13:41:19Z | 05-bff-auth-session | sg-next | review | - | gyuha |
 | 2026-05-31T13:46:41Z | 05-bff-auth-session | review | sg-next | - | gyuha |
 | 2026-05-31T13:48:40Z | 05-bff-auth-session | sg-next | sg-retro | - | gyuha |
+| 2026-05-31T13:49:40Z | 05-bff-auth-session | sg-retro | sg-next | - | gyuha |
+| 2026-05-31T13:50:05Z | 05-bff-auth-session | sg-next | ship | - | gyuha |
