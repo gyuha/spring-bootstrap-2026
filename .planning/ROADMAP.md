@@ -42,7 +42,8 @@
   3. `GET /api/auth/login`을 호출하면 OIDC authorization 진입점으로 리다이렉트되고 `returnTo` 쿼리 파라미터가 로그인 후 복귀 경로로 전달된다
   4. `/api/auth/session`과 `/api/auth/login`이 permitAll 매처로 비인증 접근 가능한 반면, 기존 보호 매처(`/api/**`)는 영향받지 않고 401 엔트리포인트를 유지한다
 
-**Plans**: 3 plansPlans:
+**Plans**: 3 plans
+
 **Wave 1**
 
 - [ ] 05-01-PLAN.md — SecurityConfig 외과적 수정(logoutUrl 재지정·204 핸들러·permitAll 추가·returnTo successHandler) + BffAuthIT logout 헬퍼 경로 갱신
@@ -66,7 +67,19 @@
   2. 동일 `GET /api/auth/me` 응답에 전역 역할·메뉴 권한·리소스 권한(Authorization application에서 조회한 권한 전체)이 단일 응답으로 함께 포함된다
   3. ArchUnit 계층 의존 테스트가 GREEN 상태를 유지하며, `auth/interfaces`가 Identity·Authorization application 서비스를 호출하는 교차 컨텍스트 의존이 명시적으로 허용된 규칙으로 통과한다
 
-**Plans**: TBD
+**Plans**: 3 plans
+
+**Wave 1**
+
+- [ ] 06-01-PLAN.md — application read DTO 신규(UserView, PermissionView) + read 메서드 신설(IdentityApplicationService.findUser, AuthorizationApplicationService.findPermissions)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 06-02-PLAN.md — MeResponse record 신규 + AuthController.me() 추가(신원·권한 교차 집계 + ArchUnit 사전 확인)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 06-03-PLAN.md — BffAuthMeIT 신규(SC#1~3 전체 단언 — Testcontainers + WireMock + MockMvc + ArchUnit GREEN)
 
 ## 진행 현황
 
@@ -80,4 +93,4 @@ Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5 → Phase 6
 | 3. BFF 인증 | v1.0 | 3/3 | Complete | 2026-05-31 |
 | 4. Authorization 컨텍스트 | v1.0 | 3/3 | Complete | 2026-05-31 |
 | 5. BFF 인증 세션 엔드포인트 | v1.1 | 0/3 | Not started | - |
-| 6. 내 정보 신원·권한 집계 | v1.1 | 0/? | Not started | - |
+| 6. 내 정보 신원·권한 집계 | v1.1 | 0/3 | Not started | - |
