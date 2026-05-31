@@ -26,7 +26,7 @@ progress:
 
 Phase: 5 — BFF 인증 세션 엔드포인트
 Plan: —
-Status: 로드맵 완료(Phase 5/6 분할). Phase 5 플래닝 대기.
+Status: Phase 5 CONTEXT 수집 완료. Phase 5 플래닝 대기.
 Last activity: 2026-05-31
 
 Progress: [░░░░░░░░░░] 0% (v1.1 기준, 0/2 phase)
@@ -95,8 +95,8 @@ v1.0 마일스톤 종료 시 인수된 항목:
 ## 세션 연속성
 
 마지막 세션: 2026-05-31
-종료 시점: v1.1 로드맵 완료 — Phase 5/6 분할 정의
-재개 파일: .planning/ROADMAP.md
+종료 시점: Phase 5 CONTEXT 수집 완료 (자율 결정 10건 — CONTEXT Open Questions 표)
+재개 파일: .planning/phases/05-bff-auth-session/05-CONTEXT.md
 
 ## Operator Next Steps
 
