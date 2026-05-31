@@ -40,7 +40,11 @@
   2. 인증 상태에서 `POST /api/auth/logout`을 호출하면 302 redirect 없이 `204 No Content`가 반환되고, HttpSession 무효화·`SESSION` 쿠키 삭제·인증 클리어가 수행되어 이후 동일 세션 쿠키로의 보호 요청은 인증 실패한다
   3. `GET /api/auth/login`을 호출하면 OIDC authorization 진입점으로 리다이렉트되고 `returnTo` 쿼리 파라미터가 로그인 후 복귀 경로로 전달된다
   4. `/api/auth/session`과 `/api/auth/login`이 permitAll 매처로 비인증 접근 가능한 반면, 기존 보호 매처(`/api/**`)는 영향받지 않고 401 엔트리포인트를 유지한다
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 05-01-PLAN.md — SecurityConfig 외과적 수정(logoutUrl 재지정·204 핸들러·permitAll 추가·returnTo successHandler) + BffAuthIT logout 헬퍼 경로 갱신
+- [ ] 05-02-PLAN.md — AuthController 신설(GET /api/auth/session, GET /api/auth/login + open-redirect 방지 + ObjectProvider 가드)
+- [ ] 05-03-PLAN.md — BffAuthSessionIT 신규(SC#1~4 전체 단언 — Testcontainers + WireMock + MockMvc)
 
 ### Phase 6: 내 정보 신원·권한 집계
 
@@ -64,5 +68,5 @@ Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5 → Phase 6
 | 2. Identity 컨텍스트 | v1.0 | 3/3 | Complete | 2026-05-31 |
 | 3. BFF 인증 | v1.0 | 3/3 | Complete | 2026-05-31 |
 | 4. Authorization 컨텍스트 | v1.0 | 3/3 | Complete | 2026-05-31 |
-| 5. BFF 인증 세션 엔드포인트 | v1.1 | 0/? | Not started | - |
+| 5. BFF 인증 세션 엔드포인트 | v1.1 | 0/3 | Not started | - |
 | 6. 내 정보 신원·권한 집계 | v1.1 | 0/? | Not started | - |
