@@ -8,17 +8,13 @@
 
 새 백엔드를 시작할 때마다 스택·아키텍처·인증/인가를 다시 결정하지 않도록, 검증된 DDD 골격과 식별/인증/인가 기반을 그대로 가져다 쓸 수 있게 한다.
 
-## Current Milestone: v1.1 인증 웹 인터페이스
+## Current State
 
-**Goal:** BFF SPA가 소비할 인증 웹 인터페이스(REST)를 auth 컨텍스트에 제공한다 — 세션 상태 조회, 로그아웃, 내 정보(신원+권한 집계), 로그인 진입.
+**v1.1 인증 웹 인터페이스 shipped (2026-05-31)** — PR #2(베이스라인 v1.0+v1.1). 다음 마일스톤 대기.
 
-**Target features:**
-- `GET /api/auth/session` — 인증 상태 조회. 비인증 시 401이 아니라 200 + `{authenticated:false}` (SPA가 401 노이즈 없이 로그인 여부 확인)
-- `POST /api/auth/logout` — BFF 로그아웃. 프레임워크 기본 302 redirect 대신 JSON 204/200 응답
-- `GET /api/auth/me` — 내 정보. Identity(userId/email/status) + Authorization(역할/메뉴/리소스 권한 전체)을 집계
-- `GET /api/auth/login` — OIDC authorization 엔드포인트로의 BFF 진입 래퍼
+auth 컨텍스트에 BFF SPA용 인증 REST 표면 완성: `/api/auth/session`(401 노이즈 없는 상태 조회)·`/logout`(204)·`/login`(returnTo, open-redirect 방지)·`/me`(Identity 신원 + Authorization direct 권한 교차 집계). 전체 64 tests GREEN. ArchUnit 무변경으로 교차 컨텍스트 의존 허용.
 
-**Key context:** auth/interfaces 계층이 Identity + Authorization 두 컨텍스트의 application 서비스를 집계(BFF 패턴). ArchUnit 계층 의존 규칙(interfaces → 타 컨텍스트 application 허용 여부) 조정이 필요할 수 있음. 인증 신원 노출과 인가 권한 노출을 한 응답에 결합하는 결정은 의도적(SPA 라우팅/메뉴 가드 편의 우선).
+**Next Milestone Goals:** 미정 — `/gsd-new-milestone`로 정의. 후보: 권한 effective 열거(그룹/계층 상속 포함, v1.1 D-02 한계 해소), 인가 변경 REST, 라이브 부팅 검증.
 
 ## Requirements
 
@@ -35,12 +31,14 @@
 - ✓ BFF 인증 — Spring Security OIDC, Redis 세션(토큰 브라우저 비노출), 최초 로그인 시 신원 연결, 불변 식별자 매칭(A-6) — v1.0
 - ✓ Authorization 컨텍스트 — 3계층 권한(전역 역할/메뉴/리소스), 그룹, 재귀 CTE 계층 상속, PermissionEvaluator 도메인 서비스 — v1.0
 - ✓ 인가 포트/어댑터(A-5) — 앱 내부 구현(Postgres + 재귀 CTE), ListObjects는 MyBatis 읽기 모델, 교체 가능 — v1.0
+- ✓ BFF 인증 세션 엔드포인트 — `/api/auth/session`(비인증 200, 401 노이즈 제거)·`/logout`(204)·`/login`(OIDC 진입 + returnTo, open-redirect 방지) — v1.1 (AUTH-06/07/10)
+- ✓ 내 정보 집계 — `/api/auth/me`가 Identity(신원) + Authorization(direct 권한) 교차 집계, CQRS-lite read DTO, ArchUnit 무변경 GREEN — v1.1 (AUTH-08/09/11)
 
 ### Active
 
 <!-- Current scope. Building toward these. -->
 
-- 인증 웹 인터페이스 — `/api/auth/session`(상태 조회), `/api/auth/logout`(JSON 204), `/api/auth/me`(신원+권한 집계), `/api/auth/login`(OIDC 진입) — v1.1 (요구사항은 `/gsd-new-milestone` 단계에서 REQ-ID로 확정)
+(다음 마일스톤에서 정의 — `/gsd-new-milestone`)
 
 ### Out of Scope
 
@@ -98,4 +96,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-31 — v1.1 인증 웹 인터페이스 마일스톤 시작*
+*Last updated: 2026-05-31 — v1.1 인증 웹 인터페이스 shipped (PR #2)*

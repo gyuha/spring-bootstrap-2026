@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: 인증 웹 인터페이스
-status: "v1.1 Phase 5+6 shipped — PR #2 (베이스라인 v1.0+v1.1). 64 tests GREEN."
-last_updated: "2026-05-31T14:44:36.545Z"
+status: "v1.1 인증 웹 인터페이스 완료·아카이브. PR #2(v1.0+v1.1). 다음 마일스톤 대기."
+last_updated: "2026-05-31T14:48:13.106Z"
 last_activity: 2026-05-31
 progress:
   total_phases: 2
@@ -26,7 +26,7 @@ progress:
 
 Phase: 5 — BFF 인증 세션 엔드포인트
 Plan: —
-Status: v1.1 Phase 5+6 shipped — PR #2 (베이스라인 v1.0+v1.1). 64 tests GREEN.
+Status: v1.1 인증 웹 인터페이스 완료·아카이브. PR #2(v1.0+v1.1). 다음 마일스톤 대기.
 Last activity: 2026-05-31
 
 Progress: [░░░░░░░░░░] 0% (v1.1 기준, 0/2 phase)

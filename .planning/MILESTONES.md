@@ -1,5 +1,25 @@
 # Milestones
 
+## v1.1 인증 웹 인터페이스 (Shipped: 2026-05-31)
+
+**Phases completed:** 2 phases, 6 plans (PR #2 — 베이스라인 v1.0+v1.1)
+
+**Delivered:** BFF SPA가 소비할 인증 웹 인터페이스(REST)를 auth 컨텍스트에 추가.
+
+**Key accomplishments:**
+
+- **Phase 5 BFF 인증 세션 엔드포인트** — `GET /api/auth/session`(비인증 200 `{authenticated:false}`, 401 노이즈 제거), `POST /api/auth/logout`(302→204, 세션·Redis 무효화), `GET /api/auth/login`(OIDC 진입 래퍼 + returnTo, open-redirect 방지: 절대/프로토콜-상대/역슬래시/인코딩 거부), SecurityConfig(permitAll·RETURN_TO successHandler·registration id @Value 외부화)
+- **Phase 6 내 정보 신원·권한 집계** — `GET /api/auth/me`가 Identity(userId/email/status) + Authorization(역할/메뉴/리소스 direct 권한) application을 교차 호출해 단일 응답 집계. CQRS-lite read DTO(UserView/PermissionView/MeResponse, 도메인·영속 애너테이션 interfaces 비노출). ArchUnit 무변경 GREEN(교차 컨텍스트 의존 허용, D-06)
+- **검증** — 전체 64 tests GREEN(v1.0 51 + 신규 13, 실 Postgres/Redis Testcontainers + WireMock OIDC + MockMvc). 각 Phase plan-checker 12/12 PASS + 코드 리뷰(open-redirect 우회 C1, unguarded principal I-1) 반영
+
+**Known deferred items at close:**
+
+- 권한 집계 = direct only(D-02) — 그룹 멤버십·리소스 계층(재귀 CTE) 상속 미포함. effective 열거는 신규 CTE 필요로 범위 초과. 3버킷 구조 유지해 향후 확장 가능. SPA가 상속 권한 표시 필요 시 다음 마일스톤 후보.
+- 라이브 부팅(`task run`) 재확인 미수행(로컬 포트 혼잡). Testcontainers가 실 인프라 검증 대체.
+- PR #2 미머지(main 대기) — v1.0+v1.1 통합 리뷰/머지 후속.
+
+---
+
 ## v1.0 베이스라인 골격 (Shipped: 2026-05-31)
 
 **Phases completed:** 4 phases, 14 plans
