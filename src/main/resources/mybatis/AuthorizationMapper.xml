@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  PermissionReadPort 의 재귀 CTE 읽기 모델(D-05). namespace = 어댑터 FQCN.
+  보안(T-04-05): 모든 파라미터는 #{} 바인딩만 사용한다 — 문자열 치환 구문 절대 금지(SQL injection).
+  사이클 가드(Pitfall 1): PG14+ CYCLE ... SET is_cycle USING path 로 무한 재귀를 방어한다.
+  상속 방향(T-04-04): 조상(ancestor) 방향만 전개한다 — 하위→상위 역상속 금지(권한 상승 차단).
+-->
+<mapper namespace="com.anchors.baseline.authorization.infrastructure.mybatis.AuthorizationMapper">
+
+    <!--
+      findEffectiveGrants — 직접 부여 ∪ 소속 그룹 부여 ∪ 조상 리소스 상속을 단일 재귀 CTE 로 모은다.
+      ancestry: 대상 resourceId 자기 자신 + parent_resource_id 만 따라 올라가는 조상 체인(상속 경로).
+      resource_grants 를 ancestry IN 으로 거르고, 주체(직접 user_id OR 소속 group_id)로 한 번 더 거른다.
+      역할 함의(EDITOR ⊇ VIEW)는 도메인 서비스(PermissionEvaluator)에서 적용 — 여기선 raw grant 만 반환.
+      source: 대상 리소스 직접부여=direct(user)/group(group), 조상 상속=inherited(주체 무관). 진단·감사용 메타데이터일
+        뿐 인가 판정에는 쓰이지 않는다(PermissionEvaluator 는 role 만 읽음) — 조상 레벨의 user/group 구분은 의도적으로 생략.
+    -->
+    <select id="findEffectiveGrants"
+            resultType="com.anchors.baseline.authorization.application.EffectiveGrantDto">
+        WITH RECURSIVE
+          ancestry(resource_id) AS (
+              SELECT #{resourceId}
+            UNION ALL
+              SELECT rh.parent_resource_id
+              FROM resource_hierarchy rh
+              JOIN ancestry a ON rh.resource_id = a.resource_id
+              WHERE rh.parent_resource_id IS NOT NULL
+          ) CYCLE resource_id SET is_cycle USING path,
+          my_groups(group_id) AS (
+              SELECT group_id FROM group_members WHERE user_id = #{userId}
+          )
+        SELECT
+            rg.role AS role,
+            rg.resource_id AS resourceId,
+            CASE
+                WHEN rg.resource_id = #{resourceId} AND rg.user_id = #{userId} THEN 'direct'
+                WHEN rg.resource_id = #{resourceId} THEN 'group'
+                ELSE 'inherited'
+            END AS source
+        FROM resource_grants rg
+        WHERE rg.resource_id IN (SELECT resource_id FROM ancestry)
+          AND (
+                rg.user_id = #{userId}
+             OR rg.group_id IN (SELECT group_id FROM my_groups)
+          )
+    </select>
+
+    <!--
+      listAccessibleResourceIds — 부여된 루트(직접 + 그룹) → 하향(parent→child) 재귀 전개 → DISTINCT.
+      action 매칭은 역할 함의로 SQL 에서 처리: VIEW 는 모든 역할이 함의, EDIT 는 EDITOR/ADMIN 만 함의.
+      descendants 는 UNION(중복 제거)으로 사이클을 방어한다(Pitfall 1).
+    -->
+    <select id="listAccessibleResourceIds" resultType="long">
+        WITH RECURSIVE granted_roots(resource_id) AS (
+            SELECT rg.resource_id
+            FROM resource_grants rg
+            WHERE (
+                    rg.user_id = #{userId}
+                 OR rg.group_id IN (SELECT group_id FROM group_members WHERE user_id = #{userId})
+                  )
+              AND (
+                    #{action} = 'VIEW'
+                 OR (#{action} = 'EDIT' AND rg.role IN ('EDITOR', 'ADMIN'))
+                  )
+        ),
+        descendants(resource_id) AS (
+              SELECT resource_id FROM granted_roots
+            UNION
+              SELECT rh.resource_id
+              FROM resource_hierarchy rh
+              JOIN descendants d ON rh.parent_resource_id = d.resource_id
+        )
+        SELECT DISTINCT resource_id FROM descendants
+    </select>
+
+</mapper>
