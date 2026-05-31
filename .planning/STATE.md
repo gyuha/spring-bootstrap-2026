@@ -24,9 +24,9 @@ progress:
 
 ## 현재 위치
 
-Phase: 3 of 4 (BFF 인증)
-Plan: 3 of 3 — shipped
-Status: Phase 3 shipped — PR #2 갱신(Phase 1+2+3, verified, threats_open:0). 다음: Phase 4 (Authorization 컨텍스트)
+Phase: 4 of 4 (Authorization 컨텍스트)
+Plan: planning complete (3 plans) — ready to execute
+Status: Phase 4 plans ready (plan-checker PASSED). Phase 1+2+3 shipped — PR #2.
 Last activity: 2026-05-31
 
 Progress: [███████▌░░] 75%
