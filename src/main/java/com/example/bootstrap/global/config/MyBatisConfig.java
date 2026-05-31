@@ -25,8 +25,10 @@ public class MyBatisConfig {
     public SqlSessionFactory sqlSessionFactory(DataSource dataSource) throws Exception {
         SqlSessionFactoryBean factory = new SqlSessionFactoryBean();
         factory.setDataSource(dataSource);
+        // classpath*: 는 mapper/ 디렉터리가 아직 없어도(Phase 1엔 XML 매퍼 없음) 빈 배열을 반환한다.
+        // classpath:(단수)는 베이스 디렉터리 부재 시 FileNotFoundException을 던져 컨텍스트 로딩이 깨진다.
         factory.setMapperLocations(
-                new PathMatchingResourcePatternResolver().getResources("classpath:mapper/**/*.xml"));
+                new PathMatchingResourcePatternResolver().getResources("classpath*:mapper/**/*.xml"));
         return factory.getObject();
     }
 }
