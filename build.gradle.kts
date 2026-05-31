@@ -55,8 +55,15 @@ dependencies {
     // Test
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
-    testImplementation("org.testcontainers:postgresql")
-    testImplementation("org.testcontainers:junit-jupiter")
+    // SB4는 테스트 슬라이스를 모듈별로 분리함(@DataJpaTest, @AutoConfigureMockMvc/@WebMvcTest는
+    // starter-test에 더 이상 전이 포함되지 않음). 필요한 슬라이스 모듈을 명시 추가.
+    testImplementation("org.springframework.boot:spring-boot-data-jpa-test")
+    testImplementation("org.springframework.boot:spring-boot-webmvc-test")
+    // Testcontainers 2.x — 모듈 좌표가 1.x에서 변경됨(postgresql -> testcontainers-postgresql,
+    // junit-jupiter -> testcontainers-junit-jupiter). BOM을 플랫폼으로 import해 버전을 정렬한다.
+    testImplementation(platform("org.testcontainers:testcontainers-bom:2.0.5"))
+    testImplementation("org.testcontainers:testcontainers-postgresql")
+    testImplementation("org.testcontainers:testcontainers-junit-jupiter")
 }
 
 tasks.withType<Test> {
