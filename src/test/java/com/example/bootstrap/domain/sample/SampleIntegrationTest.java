@@ -1,23 +1,64 @@
 package com.example.bootstrap.domain.sample;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.example.bootstrap.global.BaseIntegrationTest;
+import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
 
 /**
- * domain.sample 슬라이스가 배선 없이 동작하는지 검증 (FOUND-01).
+ * domain.sample 슬라이스가 배선 없이 동작하는지 검증 (FOUND-01, D-06).
  *
- * <p>Wave 0 스캐폴드 — placeholder GREEN. SampleController/Service/Repository는 01-03에서
- * 생성되고, GET /samples → 200 실제 assertion도 그때 채운다.
+ * <p>POST → 201, GET → 200(생성 항목 포함), DELETE 후 GET → soft-delete로 제외됨을 확인한다.
+ * 별도 배선 없이 패키지/레이어 규칙만으로 엔드포인트가 동작함을 증명한다(D-05).
  */
 @AutoConfigureMockMvc
 class SampleIntegrationTest extends BaseIntegrationTest {
 
+    @Autowired
+    MockMvc mockMvc;
+
     @Test
-    void placeholder_getSamplesReturns200() {
-        // TODO(01-03): GET /samples 호출 시 200 응답 검증 (스캐폴드 슬라이스 동작 증명)
-        assertTrue(true);
+    void createGetDeleteFlowWorksWithoutExtraWiring() throws Exception {
+        String body = """
+                {"title":"integration-sample"}
+                """;
+
+        // POST → 201, ApiResponse.data에 생성 결과
+        String response = mockMvc.perform(post("/samples")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.id").exists())
+                .andExpect(jsonPath("$.data.title").value("integration-sample"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        String id = JsonPath.read(response, "$.data.id");
+
+        // GET → 200, 생성 항목 포함 (MyBatis findAll)
+        mockMvc.perform(get("/samples"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[*].id", hasItem(id)));
+
+        // DELETE → 204
+        mockMvc.perform(delete("/samples/{id}", id))
+                .andExpect(status().isNoContent());
+
+        // GET → soft-delete된 항목 제외 (deleted_at IS NULL, D-10)
+        mockMvc.perform(get("/samples"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[*].id", not(hasItem(id))));
     }
 }
