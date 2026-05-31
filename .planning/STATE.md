@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: 인증 웹 인터페이스
 status: "Phase 5 구현·리뷰 완료(58 tests GREEN). PR/ship은 v1.1 마일스톤 완료 시 사용자 확인 후. 다음: Phase 6."
-last_updated: "2026-05-31T13:51:56.180Z"
+last_updated: "2026-05-31T13:59:52.739Z"
 last_activity: 2026-05-31
 progress:
   total_phases: 2
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 0
-  percent: 0
+  completed_plans: 3
+  percent: 50
 ---
 
 # 프로젝트 상태
