@@ -29,6 +29,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
 
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
+    implementation("org.springframework.session:spring-session-data-redis")
+
     implementation(libs.mybatis.spring.boot.starter)
 
     implementation(libs.springdoc.openapi.starter.webmvc.ui)
@@ -46,6 +49,8 @@ dependencies {
     testImplementation(libs.testcontainers.postgresql)
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.archunit.junit5)
+    testImplementation("org.springframework.security:spring-security-test")
+    testImplementation(libs.wiremock.standalone)
     testCompileOnly("org.projectlombok:lombok")
     testAnnotationProcessor("org.projectlombok:lombok")
 }

@@ -5,6 +5,17 @@ spring:
   flyway:
     enabled: true
 
+  # Phase 3: 세션을 Redis 에 영속화(토큰이 HttpSession→Redis 서버 측에만). 직렬화 기본 JDK 유지.
+  session:
+    store-type: redis
+    redis:
+      namespace: "spring:session:baseline"
+
+  # Phase 3 (D-08/AUTH-01): OIDC registration/provider 는 application-test.yml(공유)이 아니라
+  # BffAuthIT 의 @DynamicPropertySource 에만 둔다. 공유 yml 에 두면 provider URI 가 없는 다른
+  # 통합 테스트의 ApplicationContext 가 ClientRegistration 구성 실패로 깨진다. registration 은
+  # SecurityConfig 의 oauth2Login 조건부 가드와 맞물려 BffAuthIT 컨텍스트에서만 활성화된다.
+
 logging:
   level:
     org.flywaydb: DEBUG

@@ -5,6 +5,7 @@ archunit = "1.4.1"
 testcontainers = "1.21.3"
 lombok = "1.18.38"
 springdoc = "2.8.9"   # springdoc 2.8.x → Spring Boot 3.5.x 호환
+wiremock = "3.13.1"   # BOM 관리 밖 — Maven Central 최신 stable(4.0.0 은 beta)
 
 [libraries]
 # MyBatis (Spring Boot BOM 관리 밖 — 3.0.4 고정, 4.0.0 금지)
@@ -19,6 +20,9 @@ testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter" }
 
 # springdoc-openapi (Swagger UI + OpenAPI 3) — 추가 문서화 스펙
 springdoc-openapi-starter-webmvc-ui = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
+
+# WireMock (OAuth2 IdP 스텁용, test scope — BOM 관리 밖)
+wiremock-standalone = { module = "org.wiremock:wiremock-standalone", version.ref = "wiremock" }
 
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }

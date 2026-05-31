@@ -35,6 +35,16 @@ spring:
       host: localhost
       port: 6379
 
+  # Phase 3 (NFR-02): HTTP 세션을 Redis 에 영속화 → OAuth2AuthorizedClient(토큰)가
+  # HttpSession attribute 로 저장되어 Redis 서버 측에만 들어간다(쿠키엔 SESSION ID 만).
+  # 직렬화는 기본 JDK 유지(JSON 전환 시 OAuth2/OIDC 역직렬화 깨짐 — Pitfall 1).
+  # OIDC client registration/provider 는 main 에 두지 않는다(빈 placeholder 가 eager issuer
+  # discovery 를 유발해 부팅을 깨뜨림). test/배포 프로파일에서만 정의.
+  session:
+    store-type: redis
+    redis:
+      namespace: "spring:session:baseline"
+
 mybatis:
   configuration:
     # created_at → createdAt 등 snake_case 컬럼을 camelCase 프로퍼티로 자동 매핑

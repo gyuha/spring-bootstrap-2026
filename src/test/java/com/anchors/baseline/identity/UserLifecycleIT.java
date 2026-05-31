@@ -100,6 +100,25 @@ class UserLifecycleIT extends AbstractIntegrationTest {
     }
 
     /**
+     * findByEmail 포트: invite 된 사용자를 email 로 조회하면 동일 userId 가 반환되고,
+     * 존재하지 않는 email 은 빈 Optional 이다(BFF 인증의 식별자 매칭 기반 — A-6).
+     */
+    @Test
+    void findByEmailReturnsInvitedUser() {
+        String email = "find-" + System.nanoTime() + "@x.com";
+        Long userId = identityService.invite(email);
+
+        assertThat(userRepository.findByEmail(new Email(email)))
+                .isPresent()
+                .get()
+                .extracting(User::getId)
+                .isEqualTo(userId);
+
+        assertThat(userRepository.findByEmail(new Email("missing-" + System.nanoTime() + "@x.com")))
+                .isEmpty();
+    }
+
+    /**
      * IDEN-05 (SC#5): linkIdentity 이후에도 불변 로컬 PK(User.id)로 동일 사용자를 조회할 수 있다.
      * 업무 참조 키는 email/externalId 가 아니라 불변 로컬 PK 다(A-6).
      */
