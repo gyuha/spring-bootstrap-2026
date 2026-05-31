@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: 인증 웹 인터페이스
-status: roadmap_complete
-last_updated: "2026-05-31"
+status: 로드맵 완료(Phase 5/6 분할). Phase 5 플래닝 대기.
+last_updated: "2026-05-31T13:01:04.608Z"
 last_activity: 2026-05-31
 progress:
   total_phases: 2
