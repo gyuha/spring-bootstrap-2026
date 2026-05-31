@@ -27,3 +27,14 @@
 | 2026-05-31T08:08:09Z | 03-bff-auth | review | sg-retro | - | gyuha |
 | 2026-05-31T08:12:10Z | 03-bff-auth | sg-retro | sg-next | - | gyuha |
 | 2026-05-31T08:14:49Z | 03-bff-auth | sg-next | ship | - | gyuha |
+| 2026-05-31T08:16:56Z | 03-bff-auth | ship | sg-next | - | gyuha |
+| 2026-05-31T08:24:47Z | 04-authorization | sg-next | gsd-plan | - | gyuha |
+| 2026-05-31T11:14:10Z | 04-authorization | gsd-plan | sg-next | - | gyuha |
+| 2026-05-31T11:14:35Z | 04-authorization | sg-next | parallel | d52cb40 | gyuha |
+| 2026-05-31T11:36:56Z | 04-authorization | parallel | sg-next | - | gyuha |
+| 2026-05-31T11:38:18Z | 04-authorization | sg-next | review | - | gyuha |
+| 2026-05-31T11:55:52Z | 04-authorization | review | sg-next | - | gyuha |
+| 2026-05-31T11:57:28Z | 04-authorization | sg-next | sg-retro | - | gyuha |
+| 2026-05-31T11:59:35Z | 04-authorization | sg-retro | sg-next | - | gyuha |
+| 2026-05-31T12:00:13Z | 04-authorization | sg-retro | ship | - | gyuha |
+| 2026-05-31T12:18:49Z | 04-authorization | ship | sg-next | - | gyuha |
