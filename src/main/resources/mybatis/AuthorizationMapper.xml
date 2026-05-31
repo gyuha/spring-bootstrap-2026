@@ -15,7 +15,8 @@
       ancestry: 대상 resourceId 자기 자신 + parent_resource_id 만 따라 올라가는 조상 체인(상속 경로).
       resource_grants 를 ancestry IN 으로 거르고, 주체(직접 user_id OR 소속 group_id)로 한 번 더 거른다.
       역할 함의(EDITOR ⊇ VIEW)는 도메인 서비스(PermissionEvaluator)에서 적용 — 여기선 raw grant 만 반환.
-      source: 자기 리소스 = direct/group, 조상 상속 = inherited.
+      source: 대상 리소스 직접부여=direct(user)/group(group), 조상 상속=inherited(주체 무관). 진단·감사용 메타데이터일
+        뿐 인가 판정에는 쓰이지 않는다(PermissionEvaluator 는 role 만 읽음) — 조상 레벨의 user/group 구분은 의도적으로 생략.
     -->
     <select id="findEffectiveGrants"
             resultType="com.anchors.baseline.authorization.application.EffectiveGrantDto">
