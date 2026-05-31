@@ -49,3 +49,11 @@
 | 2026-05-31T13:48:40Z | 05-bff-auth-session | sg-next | sg-retro | - | gyuha |
 | 2026-05-31T13:49:40Z | 05-bff-auth-session | sg-retro | sg-next | - | gyuha |
 | 2026-05-31T13:50:05Z | 05-bff-auth-session | sg-next | ship | - | gyuha |
+| 2026-05-31T13:52:23Z | 05-bff-auth-session | ship | sg-next | - | gyuha |
+| 2026-05-31T14:01:34Z | 06-me-aggregation | sg-next | gsd-plan | - | gyuha |
+| 2026-05-31T14:22:58Z | 06-me-aggregation | gsd-plan | sg-next | - | gyuha |
+| 2026-05-31T14:23:17Z | 06-me-aggregation | sg-next | superpowers | fe634c7 | gyuha |
+| 2026-05-31T14:29:55Z | 06-me-aggregation | superpowers | sg-next | - | gyuha |
+| 2026-05-31T14:30:03Z | 06-me-aggregation | sg-next | review | - | gyuha |
+| 2026-05-31T14:33:30Z | 06-me-aggregation | review | sg-next | - | gyuha |
+| 2026-05-31T14:34:32Z | 06-me-aggregation | sg-next | sg-retro | - | gyuha |
