@@ -8,6 +8,11 @@ spring:
       host: localhost
       port: 6379
 
+auth:
+  jwt:
+    # 로컬 전용 HS256 시크릿 (>=32byte). 운영은 환경변수/시크릿 매니저로 주입할 것 — 이 값을 운영에 쓰지 말 것.
+    secret: local-dev-only-hs256-secret-please-override-in-prod-0123456789
+
 logging:
   level:
     org.hibernate.SQL: debug

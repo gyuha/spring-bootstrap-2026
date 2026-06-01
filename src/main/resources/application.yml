@@ -24,3 +24,9 @@ springdoc:
     path: /swagger-ui.html
   api-docs:
     path: /v3/api-docs
+
+auth:
+  jwt:
+    access-ttl: 30m                      # Access 토큰 수명 (D-23)
+    refresh-ttl: 14d                     # Refresh 토큰 수명 (D-23)
+    # secret은 여기 두지 않는다 — 환경별 외부화 (로컬: application-local.yml, 운영: 환경변수/시크릿 매니저)
