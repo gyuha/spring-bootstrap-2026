@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  Sample 조회 매퍼 (FOUND-02, D-08).
+  D-10: JPA @SQLRestriction이 MyBatis에는 적용되지 않으므로 모든 SELECT에 deleted_at IS NULL 수동 강제.
+  컬럼을 record(SampleResponse) 컴포넌트명으로 alias해 생성자 기반 auto-mapping으로 매핑한다.
+-->
+<mapper namespace="com.example.bootstrap.domain.sample.mapper.SampleQueryMapper">
+
+    <select id="findAll" resultType="com.example.bootstrap.domain.sample.dto.SampleResponse">
+        SELECT id, title, created_at AS "createdAt"
+        FROM samples
+        WHERE deleted_at IS NULL
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*)
+        FROM samples
+        WHERE deleted_at IS NULL
+    </select>
+
+</mapper>

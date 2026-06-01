@@ -1,94 +1,77 @@
 package com.example.bootstrap.global.config;
 
-import com.example.bootstrap.global.security.jwt.JwtAuthenticationFilter;
+import com.example.bootstrap.global.security.ProblemDetailAccessDeniedHandler;
+import com.example.bootstrap.global.security.ProblemDetailAuthEntryPoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
-import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
-import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
-import org.springframework.security.config.web.server.ServerHttpSecurity;
-import org.springframework.security.core.userdetails.MapReactiveUserDetailsService;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.server.SecurityWebFilterChain;
-import org.springframework.security.web.server.authentication.HttpStatusServerEntryPoint;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import org.springframework.security.web.SecurityFilterChain;
 
 /**
- * Spring Security WebFlux 보안 설정.
+ * JWT 인증 + 경로/메서드 인가 (D-36/37/38, AUTH-06).
  *
- * <p>JWT Stateless 인증 기반의 보안 정책을 정의합니다.
- * Actuator, Swagger, 인증 관련 엔드포인트는 인증 없이 접근 가능합니다.
+ * <p>Phase 1의 {@code anyRequest().permitAll()} 스캐폴드를 JWT 인증·인가로 전환한다. STATELESS
+ * 세션·CSRF disable은 D-19 계승. 검증은 {@code oauth2ResourceServer().jwt()}가 {@code NimbusJwtDecoder}
+ * 빈(서명·exp·블랙리스트 Validator 합성)을 자동 사용하고, {@code role} claim을 {@code ROLE_} authority로
+ * 매핑한다.
+ *
+ * <p>매처 순서(I-2, Pitfall 5): permitAll 매처를 먼저, {@code anyRequest().authenticated()}를 마지막에 둔다.
+ * 인증 진입 실패는 401({@link ProblemDetailAuthEntryPoint}), 권한 부족은 403
+ * ({@link ProblemDetailAccessDeniedHandler})로 ProblemDetail 응답한다.
+ *
+ * <p>I-1: {@code /auth/logout}은 broad {@code /auth/**} permitAll에서 제외한다. 회원 진입 전 경로
+ * ({@code /auth/signup,/login,/refresh})만 permitAll로 좁히고, {@code /auth/logout}은 명시하지 않아
+ * {@code anyRequest().authenticated()}에 걸려 인증을 요구한다(AUTH-05는 logout이 인증 경로일 것을 요구).
  */
 @Configuration
-@EnableWebFluxSecurity
-@EnableReactiveMethodSecurity
+@EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
-    /**
-     * 보안 필터 체인을 구성합니다.
-     *
-     * <p>CSRF 비활성화, JWT 기반 상태 없는(Stateless) 인증,
-     * 역할(Role) 기반 접근 제어를 설정합니다.
-     *
-     * @param http {@link ServerHttpSecurity} 인스턴스
-     * @return 구성된 {@link SecurityWebFilterChain}
-     */
     @Bean
-    public SecurityWebFilterChain securityWebFilterChain(
-            final ServerHttpSecurity http,
-            final JwtAuthenticationFilter jwtAuthenticationFilter) {
-        return http
-            .csrf(csrf -> csrf.disable())
-            .httpBasic(httpBasic -> httpBasic.disable())
-            .formLogin(login -> login.disable())
-            .exceptionHandling(ex -> ex
-                .authenticationEntryPoint(new HttpStatusServerEntryPoint(HttpStatus.UNAUTHORIZED)))
-            .addFilterAt(jwtAuthenticationFilter, SecurityWebFiltersOrder.AUTHENTICATION)
-            .authorizeExchange(exchanges -> exchanges
-                // Actuator 엔드포인트
-                .pathMatchers(
-                    "/actuator/health",
-                    "/actuator/health/**",
-                    "/actuator/info",
-                    "/actuator/prometheus"
-                ).permitAll()
-                .pathMatchers("/actuator/**").hasRole("ADMIN")
-                // Swagger/OpenAPI (local 프로파일)
-                .pathMatchers(
-                    "/v3/api-docs/**",
-                    "/swagger-ui/**",
-                    "/swagger-ui.html",
-                    "/webjars/**"
-                ).permitAll()
-                // 인증 API
-                .pathMatchers(HttpMethod.POST, "/api/v1/auth/**").permitAll()
-                // 어드민 API
-                .pathMatchers("/api/v1/admin/**").hasRole("ADMIN")
-                // 그 외 모든 요청은 인증 필요
-                .anyExchange().authenticated()
-            )
-            .build();
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http,
+            JwtAuthenticationConverter jwtAuthenticationConverter,
+            ProblemDetailAuthEntryPoint entryPoint,
+            ProblemDetailAccessDeniedHandler deniedHandler) throws Exception {
+        http
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        // I-1: 진입 전 경로만 permitAll — /auth/logout은 제외(인증 필요)
+                        .requestMatchers(HttpMethod.POST,
+                                "/auth/signup", "/auth/login", "/auth/refresh").permitAll()
+                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html",
+                                "/v3/api-docs/**").permitAll()
+                        // D-44: /admin/** 은 ADMIN 역할 필요 (USER→403, 미인증→401)
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        // I-2: 그 외 전부 인증 — 미인증 GET /samples → 401
+                        .anyRequest().authenticated())
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter))
+                        .authenticationEntryPoint(entryPoint))
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(entryPoint)
+                        .accessDeniedHandler(deniedHandler));
+        return http.build();
     }
 
-    /**
-     * BCrypt 비밀번호 인코더 Bean을 등록합니다.
-     *
-     * @return {@link BCryptPasswordEncoder} 인스턴스
-     */
+    /** claim {@code role}=USER/ADMIN → {@code ROLE_USER}/{@code ROLE_ADMIN} authority (AUTH-06). */
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
-    @Bean
-    @Profile("local")
-    public MapReactiveUserDetailsService localUserDetailsService(final PasswordEncoder encoder) {
-        return new MapReactiveUserDetailsService(
-            User.withUsername("user").password(encoder.encode("user")).roles("USER").build()
-        );
+    public JwtAuthenticationConverter jwtAuthenticationConverter() {
+        JwtGrantedAuthoritiesConverter authorities = new JwtGrantedAuthoritiesConverter();
+        authorities.setAuthorityPrefix("ROLE_");
+        authorities.setAuthoritiesClaimName("role");
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+        converter.setJwtGrantedAuthoritiesConverter(authorities);
+        return converter;
     }
 }

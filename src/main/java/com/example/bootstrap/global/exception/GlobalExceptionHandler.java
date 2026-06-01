@@ -1,131 +1,80 @@
 package com.example.bootstrap.global.exception;
 
-import com.example.bootstrap.global.response.ApiResponse;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
-import org.springframework.context.MessageSource;
-import org.springframework.context.i18n.LocaleContext;
-import org.springframework.context.i18n.LocaleContextHolder;
+import jakarta.validation.ConstraintViolationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.bind.support.WebExchangeBindException;
-import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 /**
- * 전역 예외 처리 핸들러.
+ * 전역 예외 → RFC 9457 ProblemDetail 변환 (FOUND-04, D-18).
  *
- * <p>모든 예외를 {@link ApiResponse} Envelope 형식으로 변환합니다.
- * Accept-Language 헤더를 {@link LocaleContextHolder}에 반영한 후
- * {@link MessageSource}를 통해 locale 기반 메시지를 동적으로 반환합니다.
+ * <p>{@code spring.mvc.problemdetails.enabled=true}로 Spring MVC 내장 예외는 자동 변환되고,
+ * 커스텀 예외는 여기서 처리한다. 500 fallback은 스택트레이스를 클라이언트에 노출하지 않고
+ * 서버 로그에만 남긴다(Rule 2 — 정보 노출 방지).
  */
 @RestControllerAdvice
-public class GlobalExceptionHandler {
+public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
-    private final MessageSource messageSource;
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    /**
-     * 생성자 주입.
-     *
-     * @param messageSource i18n 메시지 소스
-     */
-    public GlobalExceptionHandler(final MessageSource messageSource) {
-        this.messageSource = messageSource;
-    }
-
-    /**
-     * 비즈니스 예외를 처리합니다.
-     *
-     * @param ex       {@link BusinessException}
-     * @param exchange {@link ServerWebExchange}
-     * @return 에러 응답
-     */
     @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<ApiResponse<Void>> handleBusinessException(
-            final BusinessException ex,
-            final ServerWebExchange exchange) {
-        final ErrorCode errorCode = ex.getErrorCode();
-        final Locale locale = resolveLocale(exchange);
-        try {
-            final String message = messageSource.getMessage(
-                errorCode.getCode(), null, ex.getMessage(), locale);
-            return ResponseEntity
-                .status(errorCode.getHttpStatus())
-                .body(ApiResponse.error(errorCode.getCode(), message));
-        } finally {
-            LocaleContextHolder.resetLocaleContext();
-        }
+    public ResponseEntity<ProblemDetail> handleBusiness(BusinessException ex) {
+        ErrorCode errorCode = ex.getErrorCode();
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(errorCode.getStatus(), ex.getMessage());
+        problem.setTitle(errorCode.name());
+        problem.setProperty("errorCode", errorCode.name());
+        return ResponseEntity.status(errorCode.getStatus()).body(problem);
     }
 
     /**
-     * 유효성 검증 예외를 처리합니다.
+     * 메서드 보안({@code @PreAuthorize}) 인가 실패 → 403 ProblemDetail (D-38).
      *
-     * @param ex       {@link WebExchangeBindException}
-     * @param exchange {@link ServerWebExchange}
-     * @return 유효성 검증 에러 응답
+     * <p>{@code @PreAuthorize} 거부는 컨트롤러 호출 단계에서 {@link AuthorizationDeniedException}을
+     * 던지므로 {@code ExceptionTranslationFilter}가 아닌 advice로 들어온다. catch-all
+     * {@code Exception} 핸들러가 500으로 삼키지 않도록 명시 매핑해, 필터 단계
+     * {@link com.example.bootstrap.global.security.ProblemDetailAccessDeniedHandler}와 동일하게
+     * 403/{@code ACCESS_DENIED}로 응답한다(Rule 1 — 인가 실패가 500으로 노출되던 버그).
      */
-    @ExceptionHandler(WebExchangeBindException.class)
-    public ResponseEntity<ApiResponse<Void>> handleValidationException(
-            final WebExchangeBindException ex,
-            final ServerWebExchange exchange) {
-        final Locale locale = resolveLocale(exchange);
-        try {
-            final List<ApiResponse.FieldError> errors = ex.getBindingResult()
-                .getFieldErrors()
-                .stream()
-                .map(fieldError -> new ApiResponse.FieldError(
-                    fieldError.getField(), fieldError.getDefaultMessage()))
-                .toList();
-            final String message = messageSource.getMessage(
-                "COMMON_001", null, "입력값이 유효하지 않습니다.", locale);
-            return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.validationError("COMMON_001", message, errors));
-        } finally {
-            LocaleContextHolder.resetLocaleContext();
-        }
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<ProblemDetail> handleAuthorizationDenied(AuthorizationDeniedException ex) {
+        ProblemDetail problem =
+                ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "접근 권한이 없습니다");
+        problem.setTitle("ACCESS_DENIED");
+        problem.setProperty("errorCode", "ACCESS_DENIED");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(problem);
     }
 
     /**
-     * 예상치 못한 예외를 처리합니다.
+     * {@code @Validated} 메서드 파라미터 제약 위반({@code @RequestParam} page/size 등) → 400 ProblemDetail.
      *
-     * @param ex       {@link Exception}
-     * @param exchange {@link ServerWebExchange}
-     * @return 서버 에러 응답
+     * <p>클래스 레벨 {@code @Validated} + 파라미터 제약은 {@link ConstraintViolationException}(jakarta)을
+     * 던지며, 이는 {@code ResponseEntityExceptionHandler}의 기본 처리 대상이 아니라 catch-all
+     * {@code Exception} 핸들러가 500으로 삼킨다. 명시 매핑해 400으로 응답한다(리뷰 I1 — 음수/과대
+     * page·size가 500으로 노출되던 버그).
      */
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ProblemDetail> handleConstraintViolation(ConstraintViolationException ex) {
+        ProblemDetail problem =
+                ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problem.setTitle("INVALID_PARAMETER");
+        problem.setProperty("errorCode", "INVALID_PARAMETER");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
+    }
+
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Void>> handleException(
-            final Exception ex,
-            final ServerWebExchange exchange) {
-        final Locale locale = resolveLocale(exchange);
-        try {
-            final String message = messageSource.getMessage(
-                "COMMON_002", null, "서버 내부 오류가 발생했습니다.", locale);
-            return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error("COMMON_002", message));
-        } finally {
-            LocaleContextHolder.resetLocaleContext();
-        }
-    }
-
-    /**
-     * ServerWebExchange에서 Accept-Language를 추출하여 {@link LocaleContextHolder}에 설정합니다.
-     *
-     * <p>exchange의 {@link LocaleContext}를 {@code LocaleContextHolder}에 바인딩하여
-     * 요청 처리 스레드에서 {@link MessageSource}가 올바른 locale로 메시지를 조회할 수 있도록 합니다.
-     * 핸들러 완료 후 반드시 {@link LocaleContextHolder#resetLocaleContext()}를 호출해
-     * 스레드 오염(thread pollution)을 방지해야 합니다.
-     *
-     * @param exchange {@link ServerWebExchange}
-     * @return 요청 Locale (기본값: 한국어)
-     */
-    private Locale resolveLocale(final ServerWebExchange exchange) {
-        final LocaleContext localeContext = exchange.getLocaleContext();
-        LocaleContextHolder.setLocaleContext(localeContext, true);
-        return Optional.ofNullable(localeContext.getLocale())
-            .orElse(Locale.KOREAN);
+    public ResponseEntity<ProblemDetail> handleUnexpected(Exception ex) {
+        log.error("Unhandled exception", ex);
+        ErrorCode errorCode = ErrorCode.INTERNAL_ERROR;
+        ProblemDetail problem =
+                ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, errorCode.getMessage());
+        problem.setTitle(errorCode.name());
+        problem.setProperty("errorCode", errorCode.name());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problem);
     }
 }

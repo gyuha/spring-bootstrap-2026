@@ -1,116 +1,32 @@
 spring:
-  application:
-    name: spring-bootstrap
-
-  main:
-    # I18nConfig.localeContextResolver 빈이 WebFluxConfigurationSupport 기본 빈을 대체하기 위해 필요
-    allow-bean-definition-overriding: true
-
-  # ── R2DBC (Reactive 런타임) ────────────────────────────────────────────────
-  r2dbc:
-    url: ${R2DBC_URL:r2dbc:postgresql://localhost:5432/bootstrap}
-    username: ${DB_USERNAME:bootstrap}
-    password: ${DB_PASSWORD:bootstrap}
-    pool:
-      initial-size: 5
-      max-size: 20
-      max-idle-time: 30m
-      validation-query: SELECT 1
-
-  # ── JDBC DataSource (Flyway + Spring Batch 공유) ──────────────────────────
-  datasource:
-    url: ${JDBC_URL:jdbc:postgresql://localhost:5432/bootstrap}
-    username: ${DB_USERNAME:bootstrap}
-    password: ${DB_PASSWORD:bootstrap}
-    driver-class-name: org.postgresql.Driver
-    hikari:
-      maximum-pool-size: 5
-      minimum-idle: 2
-      connection-timeout: 30000
-
-  # ── Flyway (JDBC 기반 마이그레이션 — R2DBC·DataSource 와 완전히 분리) ──
-  # spring.flyway.url 이 명시되면 Spring Boot 자동 설정이 spring.datasource 와
-  # 무관하게 Flyway 전용 DataSource 를 내부에서 생성합니다.
-  # 운영 환경에서는 FLYWAY_* 환경변수로 마이그레이션 전용 DB 계정(DDL 권한)을
-  # 앱 런타임 계정(DML 권한, DB_USERNAME) 과 분리하여 최소 권한 원칙을 적용할 수 있습니다.
+  threads:
+    virtual:
+      enabled: true                    # Java 21 가상 스레드 (D-03)
+  jpa:
+    open-in-view: false                # 안티패턴 방지 (D-12)
+    hibernate:
+      ddl-auto: validate               # Flyway가 스키마 소유 (D-12)
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC               # 시간 UTC 고정 (D-13)
+        format_sql: true
   flyway:
     enabled: true
-    url: ${FLYWAY_URL:${JDBC_URL:jdbc:postgresql://localhost:5432/bootstrap}}
-    user: ${FLYWAY_USER:${DB_USERNAME:bootstrap}}
-    password: ${FLYWAY_PASSWORD:${DB_PASSWORD:bootstrap}}
-    driver-class-name: org.postgresql.Driver
-    locations: classpath:db/migration
-    baseline-on-migrate: false
-    validate-on-migrate: true
-    clean-disabled: true      # 안전 — flyway clean 으로 DB 전체 삭제 방지
-    encoding: UTF-8
+    validate-on-migrate: true          # 체크섬 검증 항상 켜둠
+    baseline-on-migrate: false         # greenfield — baseline 불필요
+  mvc:
+    problemdetails:
+      enabled: true                    # RFC 9457 ProblemDetail 전역 활성화 (D-18)
 
-  # ── Redis ─────────────────────────────────────────────────────────────────
-  data:
-    redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      timeout: 2000ms
-      lettuce:
-        pool:
-          max-active: 8
-          max-idle: 8
-          min-idle: 2
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
 
-  # ── Spring AI ─────────────────────────────────────────────────────────────
-  ai:
-    openai:
-      api-key: ${OPENAI_API_KEY:placeholder-key}
-      chat:
-        options:
-          model: gpt-4o-mini
-
-  # ── Spring Batch ──────────────────────────────────────────────────────────
-  batch:
-    job:
-      enabled: false  # 시작 시 자동 실행 비활성화
-    jdbc:
-      initialize-schema: never   # Flyway 마이그레이션(V1__init_schema.sql)이 배치 테이블 생성을 담당
-
-  # ── i18n ─────────────────────────────────────────────────────────────────
-  messages:
-    basename: i18n/messages
-    encoding: UTF-8
-    default-locale: ko
-
-# ── Server ───────────────────────────────────────────────────────────────────
-server:
-  port: ${SERVER_PORT:8080}
-
-# ── Actuator (기본값 — 프로파일별 override) ───────────────────────────────
-management:
-  endpoints:
-    web:
-      base-path: /actuator
-      exposure:
-        include: health,info,prometheus
-  endpoint:
-    health:
-      show-details: always
-      probes:
-        enabled: true
-  health:
-    r2dbc:
-      enabled: true
-    redis:
-      enabled: true
-    diskspace:
-      enabled: true
-  info:
-    env:
-      enabled: true
-
-# ── JWT ───────────────────────────────────────────────────────────────────
-jwt:
-  secret: ${JWT_SECRET:bootstrap-secret-key-change-in-production-must-be-32-chars}
-  access-token-expiry: 1800      # 30분 (초)
-  refresh-token-expiry: 1209600  # 14일 (초)
-
-# ── CORS (기본 로컬 허용 — 프로파일별 override) ───────────────────────────
-cors:
-  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
+auth:
+  jwt:
+    access-ttl: 30m                      # Access 토큰 수명 (D-23)
+    refresh-ttl: 14d                     # Refresh 토큰 수명 (D-23)
+    # secret은 여기 두지 않는다 — 환경별 외부화 (로컬: application-local.yml, 운영: 환경변수/시크릿 매니저)

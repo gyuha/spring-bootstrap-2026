@@ -1,42 +1,21 @@
 package com.example.bootstrap.global.exception;
 
+import lombok.Getter;
+
 /**
- * 비즈니스 로직 예외 클래스.
- *
- * <p>도메인별 에러 코드를 포함하는 비즈니스 예외입니다.
- * GlobalExceptionHandler에서 처리됩니다.
+ * 도메인 비즈니스 예외. {@link ErrorCode}가 HTTP status·메시지를 결정한다 (D-18).
  */
+@Getter
 public class BusinessException extends RuntimeException {
 
     private final ErrorCode errorCode;
 
-    /**
-     * 에러 코드로 예외를 생성합니다.
-     *
-     * @param errorCode 에러 코드
-     */
-    public BusinessException(final ErrorCode errorCode) {
-        super(errorCode.getCode());
+    public BusinessException(ErrorCode errorCode) {
         this.errorCode = errorCode;
     }
 
-    /**
-     * 에러 코드와 메시지로 예외를 생성합니다.
-     *
-     * @param errorCode 에러 코드
-     * @param message   상세 메시지
-     */
-    public BusinessException(final ErrorCode errorCode, final String message) {
-        super(message);
-        this.errorCode = errorCode;
-    }
-
-    /**
-     * 에러 코드를 반환합니다.
-     *
-     * @return {@link ErrorCode}
-     */
-    public ErrorCode getErrorCode() {
-        return errorCode;
+    @Override
+    public String getMessage() {
+        return errorCode.getMessage();
     }
 }

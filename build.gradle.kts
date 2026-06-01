@@ -1,0 +1,77 @@
+plugins {
+    java
+    id("org.springframework.boot") version "4.0.6"
+    id("io.spring.dependency-management") version "1.1.7"
+}
+
+group = "com.example"
+version = "0.0.1-SNAPSHOT"
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+// Flyway 오버라이드 — SB4.0.6 기본(11.14.1)에서 11.15.0으로 (PG18/PG17 호환, spring-boot#49012)
+extra["flyway.version"] = "11.15.0"
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Core Web
+    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+    implementation("org.springframework.boot:spring-boot-starter-validation")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+
+    // Security (Phase 1은 배선만, JWT는 Phase 2)
+    implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+
+    // MyBatis (SB4 전용 4.0.x 라인)
+    implementation("org.mybatis.spring.boot:mybatis-spring-boot-starter:4.0.1")
+
+    // Flyway (SB4: spring-boot-starter-flyway 별도 starter + PostgreSQL 모듈)
+    implementation("org.springframework.boot:spring-boot-starter-flyway")
+    runtimeOnly("org.flywaydb:flyway-database-postgresql")
+
+    // API 문서 (SB4 전용 v3.x — BOM 관리 아님, 명시 버전)
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3")
+
+    // 로컬 인프라 자동기동
+    developmentOnly("org.springframework.boot:spring-boot-docker-compose")
+
+    // DB driver
+    runtimeOnly("org.postgresql:postgresql")
+
+    // Lombok
+    compileOnly("org.projectlombok:lombok")
+    annotationProcessor("org.projectlombok:lombok")
+
+    // Test
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-testcontainers")
+    // SB4는 테스트 슬라이스를 모듈별로 분리함(@DataJpaTest, @AutoConfigureMockMvc/@WebMvcTest는
+    // starter-test에 더 이상 전이 포함되지 않음). 필요한 슬라이스 모듈을 명시 추가.
+    testImplementation("org.springframework.boot:spring-boot-data-jpa-test")
+    testImplementation("org.springframework.boot:spring-boot-webmvc-test")
+    // Testcontainers 2.x — 모듈 좌표가 1.x에서 변경됨(postgresql -> testcontainers-postgresql,
+    // junit-jupiter -> testcontainers-junit-jupiter). BOM을 플랫폼으로 import해 버전을 정렬한다.
+    testImplementation(platform("org.testcontainers:testcontainers-bom:2.0.5"))
+    testImplementation("org.testcontainers:testcontainers-postgresql")
+    testImplementation("org.testcontainers:testcontainers-junit-jupiter")
+}
+
+tasks.withType<Test> {
+    useJUnitPlatform()
+}
+
+// bootRun은 애플리케이션을 별도 JVM으로 fork하므로, ./gradlew에 넘긴 -D 시스템 프로퍼티는
+// app JVM에 도달하지 않는다. FOUND-06(가상 스레드 핀닝 실측)과 UTC 고정을 위해 jvmArgs로 명시 주입한다.
+tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
+    jvmArgs("-Duser.timezone=UTC", "-Djdk.tracePinnedThreads=full")
+}

@@ -1,39 +1,19 @@
-# ── Local 프로파일 설정 ────────────────────────────────────────────────────
-# Docker Compose 환경에서 사용됩니다.
-
 spring:
-  config:
-    activate:
-      on-profile: local
+  datasource:
+    url: jdbc:postgresql://localhost:5432/app
+    username: app
+    password: app
+  data:
+    redis:
+      host: localhost
+      port: 6379
 
+auth:
+  jwt:
+    # 로컬 전용 HS256 시크릿 (>=32byte). 운영은 환경변수/시크릿 매니저로 주입할 것 — 이 값을 운영에 쓰지 말 것.
+    secret: local-dev-only-hs256-secret-please-override-in-prod-0123456789
 
-# ── Actuator — 모든 엔드포인트 노출 ──────────────────────────────────────
-management:
-  endpoints:
-    web:
-      exposure:
-        include: "*"
-  endpoint:
-    health:
-      show-details: always
-
-# ── Swagger/OpenAPI — local만 활성화 ─────────────────────────────────────
-springdoc:
-  api-docs:
-    enabled: true
-  swagger-ui:
-    enabled: true
-    path: /swagger-ui.html
-    operationsSorter: method
-    tagsSorter: alpha
-
-# ── 로깅 — R2DBC SQL 활성화, 컬러 콘솔 ─────────────────────────────────
 logging:
   level:
-    root: INFO
-    com.example.bootstrap: DEBUG
-    io.r2dbc.postgresql.QUERY: DEBUG
-    io.r2dbc.postgresql.PARAM: DEBUG
-    org.springframework.r2dbc: DEBUG
-    org.flywaydb: INFO
-  config: classpath:logback-local.xml
+    org.hibernate.SQL: debug
+    org.mybatis: debug

@@ -1,35 +1,17 @@
+
+.planning/
+!.planning/codebase/
+
 # Gradle
 .gradle/
 build/
+!gradle/wrapper/gradle-wrapper.jar
 
-# Logs
-logs/
-*.log
-
-# Environment
-.env
-.env.*
-!.env.example
-
-# IDEs
+# IDE
 .idea/
 *.iml
-*.iws
 .vscode/
 
-# OS files
+# OS
 .DS_Store
-Thumbs.db
 
-# Java
-*.class
-out/
-hs_err_pid*
-replay_pid*
-
-# Test reports and coverage
-coverage/
-.jacoco/
-
-# Docker/local runtime
-docker/data/

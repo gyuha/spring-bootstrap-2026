@@ -1,53 +1,46 @@
 package com.example.bootstrap.global.response;
 
 import java.util.List;
+import org.springframework.data.domain.Page;
 
 /**
- * 페이지네이션 응답 클래스.
+ * 표준 페이징 응답 (D-18).
  *
- * <p>페이지네이션된 데이터 목록과 메타정보를 포함합니다.
- *
- * @param <T> 콘텐츠 타입
+ * @param pageNumber 0-based 페이지 번호
  */
 public record PageResponse<T>(
-    List<T> content,
-    long totalCount,
-    int totalPages,
-    int page,
-    int size
-) {
+        List<T> content,
+        long totalElements,
+        int totalPages,
+        int pageNumber,
+        int pageSize,
+        boolean hasNext,
+        boolean hasPrevious) {
 
-    /**
-     * 방어적 복사 compact constructor.
-     *
-     * <p>외부에서 전달된 가변 컬렉션을 불변 복사본으로 저장합니다.
-     *
-     * @param content    콘텐츠 목록
-     * @param totalCount 전체 항목 수
-     * @param totalPages 전체 페이지 수
-     * @param page       현재 페이지 번호
-     * @param size       페이지 크기
-     */
-    public PageResponse {
-        content = content != null ? List.copyOf(content) : List.of();
+    public static <T> PageResponse<T> from(Page<T> page) {
+        return new PageResponse<>(
+                page.getContent(),
+                page.getTotalElements(),
+                page.getTotalPages(),
+                page.getNumber(),
+                page.getSize(),
+                page.hasNext(),
+                page.hasPrevious());
     }
 
     /**
-     * 페이지 응답을 생성합니다.
+     * MyBatis offset/limit 조회 경로용 팩토리 (D-48). {@code pageNumber}는 0-based.
      *
-     * @param content    페이지 데이터 목록
-     * @param totalCount 전체 항목 수
-     * @param page       현재 페이지 번호 (0부터 시작)
-     * @param size       페이지 크기
-     * @param <T>        콘텐츠 타입
-     * @return 페이지 응답
+     * <p>{@code totalPages=ceil(total/size)}, {@code hasNext=(page+1)*size<total},
+     * {@code hasPrevious=page>0}로 계산한다. {@code size<=0}이면 0 나눗셈을 막기 위해
+     * {@code totalPages=0}, 네비게이션 false로 방어한다.
      */
     public static <T> PageResponse<T> of(
-            final List<T> content,
-            final long totalCount,
-            final int page,
-            final int size) {
-        final int totalPages = size > 0 ? (int) Math.ceil((double) totalCount / size) : 0;
-        return new PageResponse<>(content, totalCount, totalPages, page, size);
+            List<T> content, long totalElements, int pageNumber, int pageSize) {
+        int totalPages = pageSize <= 0 ? 0 : (int) Math.ceil((double) totalElements / pageSize);
+        boolean hasNext = pageSize > 0 && (long) (pageNumber + 1) * pageSize < totalElements;
+        boolean hasPrevious = pageNumber > 0;
+        return new PageResponse<>(
+                content, totalElements, totalPages, pageNumber, pageSize, hasNext, hasPrevious);
     }
 }
