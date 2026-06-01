@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  댓글 조회 매퍼 — 목록 페이징 + 리액션 카운트 집계 (CMNT-03, QUERY-01, D-72/D-72b).
+
+  D-72b/P7: JPA @SQLRestriction이 MyBatis에는 적용되지 않으므로 목록·카운트 SELECT 모두
+  comments.deleted_at IS NULL 수동 강제. 삭제 댓글 노출/삭제 포함 카운트 차단.
+
+  M-1 (삭제 부모 post 차단을 SQL 레벨로 강제): comments는 항상 posts와 JOIN하고
+  posts.deleted_at IS NULL을 강제한다. 부모 post가 soft-delete되면 그 댓글이 목록·카운트에서
+  자동 제외된다(컨트롤러 재량에 위임 금지). countByPost도 동일 JOIN+필터를 적용한다(D-72b).
+
+  D-72/P9 (N+1·상관 서브쿼리 금지): 리액션 카운트는 목록 1건당 반복 쿼리나 행별 상관 서브쿼리가
+  아니라, 단일 LEFT JOIN reactions (target_type='COMMENT' AND target_id = comments.id) +
+  GROUP BY comments.id + COUNT(*) FILTER (WHERE reactions.type=...) 로 일괄 집계한다. comments.id는
+  PK이므로 GROUP BY comments.id 만으로 다른 comments 컬럼을 함께 select할 수 있다(PostgreSQL
+  functional dependency). LEFT JOIN이라 리액션 0건 댓글도 likeCount=0/dislikeCount=0으로 포함된다.
+
+  컬럼을 record(CommentListItem) 컴포넌트명으로 alias해 생성자 기반 auto-mapping한다.
+-->
+<mapper namespace="com.example.bootstrap.domain.comment.mapper.CommentQueryMapper">
+
+    <select id="findPage" resultType="com.example.bootstrap.domain.comment.dto.CommentListItem">
+        SELECT comments.id AS "id",
+               comments.parent_comment_id AS "parentCommentId",
+               comments.author_id AS "authorId",
+               comments.content AS "content",
+               comments.created_at AS "createdAt",
+               COUNT(*) FILTER (WHERE reactions.type = 'LIKE') AS "likeCount",
+               COUNT(*) FILTER (WHERE reactions.type = 'DISLIKE') AS "dislikeCount"
+        FROM comments
+        JOIN posts
+          ON posts.id = comments.post_id
+         AND posts.deleted_at IS NULL
+        LEFT JOIN reactions
+               ON reactions.target_type = 'COMMENT'
+              AND reactions.target_id = comments.id
+        WHERE comments.post_id = #{postId}
+          AND comments.deleted_at IS NULL
+        GROUP BY comments.id
+        ORDER BY comments.created_at ASC
+        OFFSET #{offset} LIMIT #{limit}
+    </select>
+
+    <select id="countByPost" resultType="long">
+        SELECT COUNT(*)
+        FROM comments
+        JOIN posts
+          ON posts.id = comments.post_id
+         AND posts.deleted_at IS NULL
+        WHERE comments.post_id = #{postId}
+          AND comments.deleted_at IS NULL
+    </select>
+
+</mapper>
