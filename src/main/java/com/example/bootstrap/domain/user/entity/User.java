@@ -52,4 +52,15 @@ public class User extends BaseEntity {
     public static User create(String email, String passwordHash) {
         return new User(email, passwordHash, Role.USER);
     }
+
+    /**
+     * 비밀번호를 교체한다 — 인자는 BCrypt 해시만 받는다(평문 금지, D-54). 캡슐화를 위해 setter 대신
+     * 도메인 메서드로 노출한다. JPA dirty checking이 UPDATE를 발행하고, {@code @Version} 낙관적
+     * 락(BaseEntity)이 동시 변경을 보호한다.
+     *
+     * @param passwordHash 새 BCrypt 해시(평문 아님)
+     */
+    public void changePassword(String passwordHash) {
+        this.password = passwordHash;
+    }
 }
