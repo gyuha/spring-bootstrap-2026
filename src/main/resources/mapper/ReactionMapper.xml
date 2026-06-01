@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  리액션 매퍼 (BOARD-06/CMNT-05, D-73/D-74).
+  reaction은 MyBatis 전용(JPA 경로 없음). 동시성 안전은 DB UNIQUE(target_type, target_id, user_id)
+  복합 제약 + INSERT ... ON CONFLICT DO UPDATE(upsert)로 보장한다. 제거는 하드 DELETE다.
+  ON CONFLICT 대상 컬럼 순서는 04-01 UNIQUE 제약(target_type, target_id, user_id)과 일치한다.
+  reactions는 version/updated_at/deleted_at 컬럼이 없으므로(단순화 스키마) INSERT/SET에 포함하지 않고,
+  id/created_at은 DB DEFAULT(gen_random_uuid()/NOW())에 맡긴다.
+-->
+<mapper namespace="com.example.bootstrap.domain.reaction.mapper.ReactionMapper">
+
+    <insert id="upsert">
+        INSERT INTO reactions (target_type, target_id, user_id, type)
+        VALUES (#{targetType}, #{targetId}, #{userId}, #{type})
+        ON CONFLICT (target_type, target_id, user_id)
+        DO UPDATE SET type = EXCLUDED.type
+    </insert>
+
+    <delete id="delete">
+        DELETE FROM reactions
+        WHERE target_type = #{targetType}
+          AND target_id = #{targetId}
+          AND user_id = #{userId}
+    </delete>
+
+    <select id="countByTarget" resultType="long">
+        SELECT COUNT(*)
+        FROM reactions
+        WHERE target_type = #{targetType}
+          AND target_id = #{targetId}
+          AND type = #{type}
+    </select>
+
+</mapper>
