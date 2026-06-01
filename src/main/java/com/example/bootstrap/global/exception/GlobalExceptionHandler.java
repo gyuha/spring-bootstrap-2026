@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
@@ -28,6 +29,24 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         problem.setTitle(errorCode.name());
         problem.setProperty("errorCode", errorCode.name());
         return ResponseEntity.status(errorCode.getStatus()).body(problem);
+    }
+
+    /**
+     * 메서드 보안({@code @PreAuthorize}) 인가 실패 → 403 ProblemDetail (D-38).
+     *
+     * <p>{@code @PreAuthorize} 거부는 컨트롤러 호출 단계에서 {@link AuthorizationDeniedException}을
+     * 던지므로 {@code ExceptionTranslationFilter}가 아닌 advice로 들어온다. catch-all
+     * {@code Exception} 핸들러가 500으로 삼키지 않도록 명시 매핑해, 필터 단계
+     * {@link com.example.bootstrap.global.security.ProblemDetailAccessDeniedHandler}와 동일하게
+     * 403/{@code ACCESS_DENIED}로 응답한다(Rule 1 — 인가 실패가 500으로 노출되던 버그).
+     */
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<ProblemDetail> handleAuthorizationDenied(AuthorizationDeniedException ex) {
+        ProblemDetail problem =
+                ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "접근 권한이 없습니다");
+        problem.setTitle("ACCESS_DENIED");
+        problem.setProperty("errorCode", "ACCESS_DENIED");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(problem);
     }
 
     @ExceptionHandler(Exception.class)
