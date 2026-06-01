@@ -69,6 +69,35 @@ class RoleAuthorizationIntegrationTest extends BaseIntegrationTest {
                 .andExpect(content().string("admin-ok"));
     }
 
+    /** USER 토큰으로 경로 기반 ADMIN 전용 {@code /admin/**} → 403 (D-45/D-61, Phase 3 인가 회귀 가드). */
+    @Test
+    void userToken_adminPath_returns403() throws Exception {
+        String userAccess = userLogin();
+
+        mockMvc.perform(get("/admin/users").header("Authorization", "Bearer " + userAccess))
+                .andExpect(status().isForbidden())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.errorCode").value("ACCESS_DENIED"));
+    }
+
+    /** 미인증으로 {@code /admin/**} 접근 → 401 (D-45/D-61). */
+    @Test
+    void unauthenticated_adminPath_returns401() throws Exception {
+        mockMvc.perform(get("/admin/users"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.errorCode").value("UNAUTHENTICATED"));
+    }
+
+    /** ADMIN 토큰으로 {@code /admin/**} → 200 (role=ADMIN → ROLE_ADMIN 매핑, D-45/D-61). */
+    @Test
+    void adminToken_adminPath_returns200() throws Exception {
+        String adminAccess = jwtTokenProvider.issueAccess(UUID.randomUUID(), Role.ADMIN).token();
+
+        mockMvc.perform(get("/admin/users").header("Authorization", "Bearer " + adminAccess))
+                .andExpect(status().isOk());
+    }
+
     /** Bearer 프리픽스 없는 헤더 → 401 (회귀 가드, D-30, commit 6aacdf4 박제). */
     @Test
     void missingBearerPrefix_returns401() throws Exception {
