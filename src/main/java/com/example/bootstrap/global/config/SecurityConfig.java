@@ -51,6 +51,8 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html",
                                 "/v3/api-docs/**").permitAll()
+                        // D-44: /admin/** 은 ADMIN 역할 필요 (USER→403, 미인증→401)
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         // I-2: 그 외 전부 인증 — 미인증 GET /samples → 401
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2
