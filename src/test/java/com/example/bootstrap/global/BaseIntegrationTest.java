@@ -1,5 +1,9 @@
 package com.example.bootstrap.global;
 
+import com.example.bootstrap.domain.user.entity.Role;
+import com.example.bootstrap.global.security.JwtTokenProvider;
+import java.util.UUID;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.testcontainers.containers.GenericContainer;
@@ -28,5 +32,23 @@ public abstract class BaseIntegrationTest {
     static {
         postgres.start();
         redis.start();
+    }
+
+    @Autowired
+    protected JwtTokenProvider jwtTokenProvider;
+
+    /**
+     * 보호 리소스 테스트용 Bearer 헤더 값을 만든다. 02-03 secure-by-default 전환 이후 모든
+     * {@code /auth/**} 외 경로가 인증을 요구하므로, 임의 userId로 Access JWT를 직접 발급해
+     * {@code "Bearer <token>"}을 반환한다. (Rule 1 — 02-03 회귀로 깨진 슬라이스 테스트 인증)
+     */
+    protected String bearer(Role role) {
+        String token = jwtTokenProvider.issueAccess(UUID.randomUUID(), role).token();
+        return "Bearer " + token;
+    }
+
+    /** USER 권한 Bearer 헤더 값. */
+    protected String userBearer() {
+        return bearer(Role.USER);
     }
 }

@@ -34,8 +34,9 @@ class SampleIntegrationTest extends BaseIntegrationTest {
                 {"title":"integration-sample"}
                 """;
 
-        // POST → 201, ApiResponse.data에 생성 결과
+        // POST → 201, ApiResponse.data에 생성 결과 (02-03 secure-by-default — 인증 필요)
         String response = mockMvc.perform(post("/samples")
+                        .header("Authorization", userBearer())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated())
@@ -48,16 +49,16 @@ class SampleIntegrationTest extends BaseIntegrationTest {
         String id = JsonPath.read(response, "$.data.id");
 
         // GET → 200, 생성 항목 포함 (MyBatis findAll)
-        mockMvc.perform(get("/samples"))
+        mockMvc.perform(get("/samples").header("Authorization", userBearer()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[*].id", hasItem(id)));
 
         // DELETE → 204
-        mockMvc.perform(delete("/samples/{id}", id))
+        mockMvc.perform(delete("/samples/{id}", id).header("Authorization", userBearer()))
                 .andExpect(status().isNoContent());
 
         // GET → soft-delete된 항목 제외 (deleted_at IS NULL, D-10)
-        mockMvc.perform(get("/samples"))
+        mockMvc.perform(get("/samples").header("Authorization", userBearer()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[*].id", not(hasItem(id))));
     }

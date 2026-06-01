@@ -28,7 +28,8 @@ class GlobalExceptionHandlerTest extends BaseIntegrationTest {
 
     @Test
     void businessExceptionReturnsProblemDetailWithErrorCode() throws Exception {
-        mockMvc.perform(delete("/samples/{id}", UUID.randomUUID()))
+        mockMvc.perform(delete("/samples/{id}", UUID.randomUUID())
+                        .header("Authorization", userBearer()))
                 .andExpect(status().isNotFound())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.errorCode").value("SAMPLE_NOT_FOUND"));

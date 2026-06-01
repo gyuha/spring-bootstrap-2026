@@ -1,0 +1,8 @@
+# 테스트 전용 설정 — 통합 테스트 컨텍스트가 HS256 JWT 빈을 생성할 수 있도록
+# auth.jwt.secret을 주입한다(운영은 환경변수/시크릿 매니저). >=32byte 요구(D-22, JwtBeans).
+# 02-03에서 JwtBeans가 배선되며 secret 없는 @SpringBootTest 컨텍스트가 부팅 실패하던 회귀를 막는다.
+auth:
+  jwt:
+    access-ttl: 30m                      # main application.yml과 동일 — test resource가 main을 덮으므로 명시
+    refresh-ttl: 14d
+    secret: test-secret-key-that-is-at-least-32-bytes-long-1234567890
