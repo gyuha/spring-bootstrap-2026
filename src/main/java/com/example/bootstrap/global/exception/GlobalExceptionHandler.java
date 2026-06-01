@@ -1,5 +1,6 @@
 package com.example.bootstrap.global.exception;
 
+import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -47,6 +48,23 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         problem.setTitle("ACCESS_DENIED");
         problem.setProperty("errorCode", "ACCESS_DENIED");
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(problem);
+    }
+
+    /**
+     * {@code @Validated} 메서드 파라미터 제약 위반({@code @RequestParam} page/size 등) → 400 ProblemDetail.
+     *
+     * <p>클래스 레벨 {@code @Validated} + 파라미터 제약은 {@link ConstraintViolationException}(jakarta)을
+     * 던지며, 이는 {@code ResponseEntityExceptionHandler}의 기본 처리 대상이 아니라 catch-all
+     * {@code Exception} 핸들러가 500으로 삼킨다. 명시 매핑해 400으로 응답한다(리뷰 I1 — 음수/과대
+     * page·size가 500으로 노출되던 버그).
+     */
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ProblemDetail> handleConstraintViolation(ConstraintViolationException ex) {
+        ProblemDetail problem =
+                ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problem.setTitle("INVALID_PARAMETER");
+        problem.setProperty("errorCode", "INVALID_PARAMETER");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
     }
 
     @ExceptionHandler(Exception.class)

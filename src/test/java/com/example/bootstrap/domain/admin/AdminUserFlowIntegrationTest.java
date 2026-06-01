@@ -207,9 +207,9 @@ class AdminUserFlowIntegrationTest extends BaseIntegrationTest {
         return ((Number) JsonPath.read(json, "$.data.totalElements")).longValue();
     }
 
-    /** 큰 페이지로 전체 활성 목록 JSON을 가져온다(전수 확인용). */
+    /** 큰 페이지로 전체 활성 목록 JSON을 가져온다(전수 확인용). size는 컨트롤러 상한(@Max(100)) 내. */
     private String listAll() throws Exception {
-        return mockMvc.perform(get("/admin/users?page=0&size=1000").header("Authorization", admin()))
+        return mockMvc.perform(get("/admin/users?page=0&size=100").header("Authorization", admin()))
                 .andExpect(status().isOk())
                 .andReturn()
                 .getResponse()

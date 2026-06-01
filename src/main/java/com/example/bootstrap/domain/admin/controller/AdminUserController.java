@@ -5,9 +5,13 @@ import com.example.bootstrap.domain.admin.dto.PasswordResetResponse;
 import com.example.bootstrap.domain.admin.service.AdminUserService;
 import com.example.bootstrap.global.response.ApiResponse;
 import com.example.bootstrap.global.response.PageResponse;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.PositiveOrZero;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,14 +28,16 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/admin/users")
 @RequiredArgsConstructor
+@Validated
 public class AdminUserController {
 
     private final AdminUserService adminUserService;
 
+    // I1(리뷰): page/size 미검증 시 음수→Postgres OFFSET/LIMIT 500, 거대 size→DoS. 경계 강제.
     @GetMapping
     public ApiResponse<PageResponse<AdminUserResponse>> list(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "0") @PositiveOrZero int page,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
         return ApiResponse.ok(adminUserService.findPage(page, size));
     }
 
